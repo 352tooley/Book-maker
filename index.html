@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reedsy Studio Clone - Professional Book Publishing</title>
+    <title>Reedsy Studio - Professional Book Publishing</title>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -16,23 +16,24 @@
 
         :root {
             --bg-primary: #ffffff;
-            --bg-secondary: #f8f9fa;
+            --bg-secondary: #f5f7fa;
             --bg-tertiary: #e9ecef;
-            --bg-dark: #1a1d23;
-            --text-primary: #1a1a1a;
+            --bg-dark: #1a202c;
+            --bg-darker: #0f1419;
+            --text-primary: #1a202c;
             --text-secondary: #4a5568;
             --text-tertiary: #718096;
             --text-white: #ffffff;
-            --accent-primary: #06b6d4;
-            --accent-secondary: #0891b2;
+            --accent-primary: #00bcd4;
+            --accent-secondary: #0097a7;
             --accent-purple: #8b5cf6;
             --accent-green: #10b981;
             --accent-orange: #f59e0b;
             --accent-red: #ef4444;
-            --accent-glow: rgba(6, 182, 212, 0.3);
+            --accent-glow: rgba(0, 188, 212, 0.2);
             --border-color: #e2e8f0;
             --code-bg: #1e293b;
-            --code-border: #06b6d4;
+            --code-border: #00bcd4;
             --success: #10b981;
             --warning: #f59e0b;
             --error: #ef4444;
@@ -40,8 +41,6 @@
             --body-font: Georgia, 'Times New Roman', serif;
             --code-font: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
             --sidebar-width: 280px;
-            --book-width: 6in;
-            --book-height: 9in;
         }
 
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@300;400;700&display=swap');
@@ -50,13 +49,7 @@
             font-family: var(--heading-font);
             background: var(--bg-secondary);
             color: var(--text-primary);
-            overflow: hidden;
-        }
-
-        .app-container {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            height: 100vh;
+            overflow-x: hidden;
         }
 
         /* Top Navigation */
@@ -65,33 +58,39 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 60px;
+            height: 64px;
             background: var(--bg-dark);
             color: var(--text-white);
             display: flex;
             align-items: center;
-            padding: 0 1.5rem;
+            justify-content: space-between;
+            padding: 0 2rem;
             z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
         }
 
         .brand-logo {
             font-weight: 800;
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             color: var(--accent-primary);
-            margin-right: 2rem;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .nav-tabs {
+        .brand-logo:hover {
+            transform: scale(1.05);
+        }
+
+        .nav-actions {
             display: flex;
-            gap: 0.5rem;
-            flex: 1;
+            gap: 1rem;
+            align-items: center;
         }
 
-        .nav-tab {
-            padding: 0.5rem 1rem;
-            background: transparent;
-            color: var(--text-white);
+        .nav-btn {
+            padding: 0.5rem 1.25rem;
+            background: var(--accent-primary);
+            color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -100,94 +99,294 @@
             transition: all 0.2s;
         }
 
-        .nav-tab:hover {
-            background: rgba(255,255,255,0.1);
+        .nav-btn:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px var(--accent-glow);
         }
 
-        .nav-tab.active {
-            background: var(--accent-primary);
+        .nav-btn.secondary {
+            background: transparent;
+            border: 2px solid var(--accent-primary);
         }
 
-        .nav-actions {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
+        .nav-btn.secondary:hover {
+            background: rgba(0, 188, 212, 0.1);
         }
 
-        .word-count {
-            font-size: 0.85rem;
-            color: var(--text-tertiary);
-            padding: 0.5rem 1rem;
-            background: rgba(255,255,255,0.05);
-            border-radius: 6px;
-        }
-
-        .word-count strong {
-            color: var(--accent-primary);
-            font-weight: 700;
-        }
-
-        /* Main Content Area */
+        /* Main Content */
         .main-content {
-            margin-top: 60px;
-            height: calc(100vh - 60px);
-            overflow: hidden;
+            margin-top: 64px;
+            min-height: calc(100vh - 64px);
         }
 
         /* View Modes */
         .view-mode {
             display: none;
-            height: 100%;
         }
 
         .view-mode.active {
+            display: block;
+        }
+
+        /* ===== BOOKSHELF VIEW ===== */
+        .bookshelf-view {
+            padding: 3rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .bookshelf-header {
+            margin-bottom: 3rem;
+        }
+
+        .bookshelf-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .bookshelf-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .bookshelf-controls {
             display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
         }
 
-        /* Write Mode */
-        .write-mode {
+        .search-bar {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: var(--heading-font);
+            transition: all 0.2s;
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            color: var(--text-tertiary);
+        }
+
+        .create-book-btn {
+            padding: 0.75rem 2rem;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .create-book-btn:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px var(--accent-glow);
+        }
+
+        .books-grid {
             display: grid;
-            grid-template-columns: 280px 1fr;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
         }
 
-        .chapters-sidebar {
+        .book-card {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .book-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+            border-color: var(--accent-primary);
+        }
+
+        .book-cover {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .book-cover-placeholder {
+            font-size: 4rem;
+            opacity: 0.3;
+        }
+
+        .book-info {
+            padding: 1.5rem;
+        }
+
+        .book-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .book-author {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .book-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .book-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .book-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .book-action-btn {
+            flex: 1;
+            padding: 0.6rem;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--heading-font);
+        }
+
+        .book-action-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-primary);
+        }
+
+        .book-action-btn.primary {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        .book-action-btn.primary:hover {
+            background: var(--accent-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 6rem 2rem;
+        }
+
+        .empty-icon {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.3;
+        }
+
+        .empty-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .empty-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        /* ===== EDITOR VIEW ===== */
+        .editor-view {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            height: calc(100vh - 64px);
+        }
+
+        .manuscript-sidebar {
             background: var(--bg-primary);
             border-right: 2px solid var(--border-color);
             overflow-y: auto;
             padding: 1.5rem;
         }
 
-        .chapters-header {
+        .sidebar-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
 
-        .chapters-header h3 {
-            font-size: 0.9rem;
+        .sidebar-title {
+            font-size: 0.85rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: var(--text-secondary);
         }
 
-        .add-chapter-btn {
-            width: 32px;
-            height: 32px;
+        .add-section-btn {
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             background: var(--accent-primary);
             color: white;
             border: none;
             cursor: pointer;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
         }
 
-        .add-chapter-btn:hover {
+        .add-section-btn:hover {
             background: var(--accent-secondary);
             transform: scale(1.1);
         }
@@ -215,48 +414,19 @@
             color: white;
         }
 
-        .chapter-title {
+        .chapter-title-text {
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             margin-bottom: 0.25rem;
         }
 
-        .chapter-meta {
-            font-size: 0.7rem;
+        .chapter-meta-text {
+            font-size: 0.75rem;
             color: var(--text-tertiary);
         }
 
-        .chapter-item.active .chapter-meta {
+        .chapter-item.active .chapter-meta-text {
             color: rgba(255,255,255,0.8);
-        }
-
-        .chapter-actions {
-            position: absolute;
-            right: 0.5rem;
-            top: 0.5rem;
-            display: none;
-            gap: 0.25rem;
-        }
-
-        .chapter-item:hover .chapter-actions {
-            display: flex;
-        }
-
-        .chapter-action-btn {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            background: rgba(0,0,0,0.1);
-            border: none;
-            cursor: pointer;
-            font-size: 0.7rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .chapter-action-btn:hover {
-            background: rgba(0,0,0,0.2);
         }
 
         .editor-container {
@@ -301,419 +471,121 @@
             background: var(--bg-secondary);
         }
 
-        /* Outline Mode */
-        .outline-mode {
-            padding: 2rem;
-            overflow-y: auto;
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
         }
 
-        .outline-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
+        .modal.active {
+            display: flex;
         }
 
-        .board-card {
+        .modal-content {
             background: var(--bg-primary);
             border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border: 2px solid var(--border-color);
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
 
-        .board-header {
+        .modal-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 0.75rem;
             margin-bottom: 1.5rem;
         }
 
-        .board-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
+        .modal-header h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-        }
-
-        .board-icon.characters {
-            background: linear-gradient(135deg, var(--accent-purple), #a78bfa);
-        }
-
-        .board-icon.worldbuilding {
-            background: linear-gradient(135deg, var(--accent-green), #34d399);
-        }
-
-        .board-icon.research {
-            background: linear-gradient(135deg, var(--accent-orange), #fbbf24);
-        }
-
-        .board-icon.timeline {
-            background: linear-gradient(135deg, var(--accent-red), #f87171);
-        }
-
-        .board-title {
-            flex: 1;
-        }
-
-        .board-title h3 {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 0.25rem;
-        }
-
-        .board-title p {
-            font-size: 0.75rem;
-            color: var(--text-tertiary);
-        }
-
-        .add-item-btn {
-            padding: 0.5rem 1rem;
-            background: var(--accent-primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-            width: 100%;
-            margin-bottom: 1rem;
-        }
-
-        .add-item-btn:hover {
-            background: var(--accent-secondary);
-            transform: translateY(-1px);
-        }
-
-        .board-items {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .board-item {
-            background: var(--bg-secondary);
-            padding: 1rem;
-            border-radius: 6px;
-            border-left: 4px solid var(--accent-primary);
-            cursor: pointer;
             transition: all 0.2s;
         }
 
-        .board-item:hover {
-            transform: translateX(4px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        .modal-close:hover {
+            background: var(--border-color);
+            transform: rotate(90deg);
         }
 
-        .item-title {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .item-description {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-
-        .item-tags {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.75rem;
-            flex-wrap: wrap;
-        }
-
-        .tag {
-            padding: 0.25rem 0.5rem;
-            background: var(--accent-primary);
-            color: white;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
-        /* Goals Mode */
-        .goals-mode {
-            padding: 3rem;
-            overflow-y: auto;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .goals-header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .goals-header h2 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-        }
-
-        .goals-header p {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-        }
-
-        .goals-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-
-        .goal-card {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        .goal-value {
-            font-size: 3rem;
-            font-weight: 800;
-            color: var(--accent-primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .goal-label {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
-        }
-
-        .progress-section {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .progress-section h3 {
-            font-size: 1.5rem;
-            font-weight: 700;
+        .modal-body {
             margin-bottom: 1.5rem;
         }
 
-        .progress-bar-container {
-            margin-bottom: 2rem;
-        }
-
-        .progress-bar-label {
+        .modal-footer {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .progress-bar {
-            height: 24px;
-            background: var(--bg-tertiary);
-            border-radius: 12px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            transition: width 0.3s ease;
-            display: flex;
-            align-items: center;
+            gap: 1rem;
             justify-content: flex-end;
-            padding-right: 0.5rem;
-            color: white;
-            font-size: 0.75rem;
-            font-weight: 700;
         }
 
-        .goal-settings {
-            display: grid;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .goal-input-group {
-            display: grid;
-            grid-template-columns: 1fr 150px;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .goal-input-group label {
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .goal-input-group input {
-            padding: 0.5rem;
-            border: 2px solid var(--border-color);
-            border-radius: 6px;
-            font-family: var(--heading-font);
-            font-size: 0.9rem;
-        }
-
-        .goal-input-group input:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-        }
-
-        /* Export Mode */
-        .export-mode {
-            padding: 3rem;
-            overflow-y: auto;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .export-header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .export-header h2 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-        }
-
-        .export-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-        }
-
-        .export-card {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid transparent;
-        }
-
-        .export-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            border-color: var(--accent-primary);
-        }
-
-        .export-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .export-card h3 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .export-card p {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-
-        /* Settings Mode */
-        .settings-mode {
-            padding: 3rem;
-            overflow-y: auto;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .settings-section {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .settings-section h3 {
-            font-size: 1.3rem;
-            font-weight: 700;
+        .form-group {
             margin-bottom: 1.5rem;
         }
 
-        .setting-item {
-            margin-bottom: 1.5rem;
-        }
-
-        .setting-item label {
+        .form-group label {
             display: block;
             font-weight: 600;
             margin-bottom: 0.5rem;
             font-size: 0.9rem;
+            color: var(--text-secondary);
         }
 
-        .setting-item input,
-        .setting-item select,
-        .setting-item textarea {
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
             width: 100%;
             padding: 0.75rem;
             border: 2px solid var(--border-color);
             border-radius: 6px;
             font-family: var(--heading-font);
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            transition: all 0.2s;
         }
 
-        .setting-item input:focus,
-        .setting-item select:focus,
-        .setting-item textarea:focus {
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: var(--body-font);
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
             outline: none;
             border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
-        .setting-item textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        .range-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .range-group label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .range-value {
-            color: var(--accent-primary);
-            font-weight: 700;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            margin-bottom: 0.5rem;
-        }
-
-        /* Buttons */
         .btn {
             padding: 0.75rem 1.5rem;
             border: none;
             border-radius: 6px;
             font-family: var(--heading-font);
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -738,186 +610,26 @@
             background: var(--border-color);
         }
 
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            padding: 2rem;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .modal-header h3 {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .modal-close {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: var(--bg-tertiary);
-            border: none;
-            cursor: pointer;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-close:hover {
-            background: var(--border-color);
-        }
-
-        .modal-body {
-            margin-bottom: 1.5rem;
-        }
-
-        .modal-footer {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .form-group input,
-        .form-group textarea,
-        .form-group select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid var(--border-color);
-            border-radius: 6px;
-            font-family: var(--heading-font);
-            font-size: 0.9rem;
-        }
-
-        .form-group textarea {
-            min-height: 120px;
-            resize: vertical;
-            font-family: var(--body-font);
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-        }
-
-        /* Upload Zone */
-        .upload-zone {
-            padding: 2rem;
-            border: 2px dashed var(--accent-primary);
-            border-radius: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: var(--bg-secondary);
-            margin-bottom: 1rem;
-        }
-
-        .upload-zone:hover {
-            border-color: var(--accent-secondary);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px var(--accent-glow);
-        }
-
-        .upload-zone.dragover {
-            background: var(--accent-primary);
-            color: white;
-            border-style: solid;
-        }
-
-        .upload-text {
-            font-weight: 600;
-            font-size: 1rem;
-            color: var(--accent-primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .upload-zone.dragover .upload-text {
-            color: white;
-        }
-
-        .upload-hint {
-            font-size: 0.8rem;
-            color: var(--text-tertiary);
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
-            .write-mode {
+            .editor-view {
                 grid-template-columns: 1fr;
             }
 
-            .chapters-sidebar {
+            .manuscript-sidebar {
                 display: none;
             }
 
-            .editor-container {
-                padding: 1.5rem;
-            }
-
-            .outline-grid {
+            .books-grid {
                 grid-template-columns: 1fr;
             }
 
-            .goals-grid {
-                grid-template-columns: 1fr;
+            .bookshelf-controls {
+                flex-direction: column;
             }
 
-            .export-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .nav-tabs {
-                overflow-x: auto;
-                flex-wrap: nowrap;
+            .search-bar {
+                width: 100%;
             }
         }
 
@@ -944,29 +656,53 @@
 <body>
     <!-- Top Navigation -->
     <div class="top-nav">
-        <div class="brand-logo">📖 Reedsy Studio</div>
-        <div class="nav-tabs">
-            <button class="nav-tab active" onclick="switchView('write')">✍️ Write</button>
-            <button class="nav-tab" onclick="switchView('outline')">📋 Outline</button>
-            <button class="nav-tab" onclick="switchView('goals')">🎯 Goals</button>
-            <button class="nav-tab" onclick="switchView('export')">💾 Export</button>
-            <button class="nav-tab" onclick="switchView('settings')">⚙️ Settings</button>
-        </div>
-        <div class="nav-actions">
-            <div class="word-count">
-                <strong id="totalWordCount">0</strong> words
-            </div>
+        <div class="brand-logo" onclick="goToBookshelf()">📖 Reedsy Studio</div>
+        <div class="nav-actions" id="navActions">
+            <!-- Dynamic based on current view -->
         </div>
     </div>
 
     <!-- Main Content -->
     <div class="main-content">
-        <!-- Write Mode -->
-        <div class="view-mode write-mode active" id="writeMode">
-            <div class="chapters-sidebar">
-                <div class="chapters-header">
-                    <h3>Chapters</h3>
-                    <button class="add-chapter-btn" onclick="openAddChapterModal()">+</button>
+        <!-- Bookshelf View -->
+        <div class="view-mode bookshelf-view active" id="bookshelfView">
+            <div class="bookshelf-header">
+                <h1 class="bookshelf-title">My Books</h1>
+                <p class="bookshelf-subtitle">Your writing projects, all in one place</p>
+
+                <div class="bookshelf-controls">
+                    <div class="search-bar">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="searchInput" placeholder="Search your books...">
+                    </div>
+                    <button class="create-book-btn" onclick="openCreateBookModal()">
+                        <span>+</span>
+                        <span>Create New Book</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="books-grid" id="booksGrid">
+                <!-- Books will be rendered here -->
+            </div>
+
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-icon">📚</div>
+                <h2 class="empty-title">No books yet</h2>
+                <p class="empty-subtitle">Create your first book to get started</p>
+                <button class="create-book-btn" onclick="openCreateBookModal()">
+                    <span>+</span>
+                    <span>Create Your First Book</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Editor View -->
+        <div class="view-mode editor-view" id="editorView">
+            <div class="manuscript-sidebar">
+                <div class="sidebar-header">
+                    <h3 class="sidebar-title">Manuscript</h3>
+                    <button class="add-section-btn" onclick="openAddChapterModal()">+</button>
                 </div>
                 <ul class="chapter-list" id="chapterList">
                     <!-- Chapters will be added here -->
@@ -974,259 +710,30 @@
             </div>
             <div class="editor-container">
                 <input type="text" class="chapter-title-input" id="chapterTitleInput" placeholder="Chapter Title">
-                <div class="editor-content" contenteditable="true" id="editorContent" placeholder="Start writing your story..."></div>
+                <div class="editor-content" contenteditable="true" id="editorContent"></div>
             </div>
         </div>
+    </div>
 
-        <!-- Outline Mode -->
-        <div class="view-mode outline-mode" id="outlineMode">
-            <div class="outline-grid">
-                <!-- Characters Board -->
-                <div class="board-card">
-                    <div class="board-header">
-                        <div class="board-icon characters">👥</div>
-                        <div class="board-title">
-                            <h3>Characters</h3>
-                            <p>Track your characters and their arcs</p>
-                        </div>
-                    </div>
-                    <button class="add-item-btn" onclick="openCharacterModal()">+ Add Character</button>
-                    <div class="board-items" id="charactersList">
-                        <!-- Character items will be added here -->
-                    </div>
-                </div>
-
-                <!-- World Building Board -->
-                <div class="board-card">
-                    <div class="board-header">
-                        <div class="board-icon worldbuilding">🌍</div>
-                        <div class="board-title">
-                            <h3>World Building</h3>
-                            <p>Build your story's universe</p>
-                        </div>
-                    </div>
-                    <button class="add-item-btn" onclick="openWorldBuildingModal()">+ Add Location</button>
-                    <div class="board-items" id="worldBuildingList">
-                        <!-- World building items will be added here -->
-                    </div>
-                </div>
-
-                <!-- Research Board -->
-                <div class="board-card">
-                    <div class="board-header">
-                        <div class="board-icon research">📚</div>
-                        <div class="board-title">
-                            <h3>Research</h3>
-                            <p>Organize your research notes</p>
-                        </div>
-                    </div>
-                    <button class="add-item-btn" onclick="openResearchModal()">+ Add Research</button>
-                    <div class="board-items" id="researchList">
-                        <!-- Research items will be added here -->
-                    </div>
-                </div>
-
-                <!-- Timeline Board -->
-                <div class="board-card">
-                    <div class="board-header">
-                        <div class="board-icon timeline">⏱️</div>
-                        <div class="board-title">
-                            <h3>Timeline</h3>
-                            <p>Plot your story's timeline</p>
-                        </div>
-                    </div>
-                    <button class="add-item-btn" onclick="openTimelineModal()">+ Add Event</button>
-                    <div class="board-items" id="timelineList">
-                        <!-- Timeline items will be added here -->
-                    </div>
-                </div>
+    <!-- Create Book Modal -->
+    <div class="modal" id="createBookModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Book</h3>
+                <button class="modal-close" onclick="closeModal('createBookModal')">×</button>
             </div>
-        </div>
-
-        <!-- Goals Mode -->
-        <div class="view-mode goals-mode" id="goalsMode">
-            <div class="goals-header">
-                <h2>Writing Goals & Progress</h2>
-                <p>Track your writing progress and stay motivated</p>
-            </div>
-
-            <div class="goals-grid">
-                <div class="goal-card">
-                    <div class="goal-value" id="currentWordCount">0</div>
-                    <div class="goal-label">Current Words</div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Book Title *</label>
+                    <input type="text" id="newBookTitle" placeholder="Untitled Book">
                 </div>
-                <div class="goal-card">
-                    <div class="goal-value" id="todayWords">0</div>
-                    <div class="goal-label">Today's Words</div>
-                </div>
-                <div class="goal-card">
-                    <div class="goal-value" id="streakDays">0</div>
-                    <div class="goal-label">Day Streak</div>
-                </div>
-            </div>
-
-            <div class="progress-section">
-                <h3>Progress to Goal</h3>
-                <div class="progress-bar-container">
-                    <div class="progress-bar-label">
-                        <span>Book Goal</span>
-                        <span id="bookGoalProgress">0 / 80,000 words</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="bookProgressFill" style="width: 0%">
-                            0%
-                        </div>
-                    </div>
-                </div>
-
-                <div class="progress-bar-container">
-                    <div class="progress-bar-label">
-                        <span>Daily Goal</span>
-                        <span id="dailyGoalProgress">0 / 1,000 words</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="dailyProgressFill" style="width: 0%">
-                            0%
-                        </div>
-                    </div>
-                </div>
-
-                <div class="goal-settings">
-                    <div class="goal-input-group">
-                        <label>Daily Word Goal:</label>
-                        <input type="number" id="dailyGoalInput" value="1000" min="100" step="100">
-                    </div>
-                    <div class="goal-input-group">
-                        <label>Book Word Goal:</label>
-                        <input type="number" id="bookGoalInput" value="80000" min="1000" step="1000">
-                    </div>
-                    <button class="btn btn-primary" onclick="updateGoals()">Save Goals</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Export Mode -->
-        <div class="view-mode export-mode" id="exportMode">
-            <div class="export-header">
-                <h2>Export Your Book</h2>
-                <p>Choose your export format and download your manuscript</p>
-            </div>
-
-            <div class="export-grid">
-                <div class="export-card" onclick="exportEPUB()">
-                    <div class="export-icon">📱</div>
-                    <h3>EPUB</h3>
-                    <p>Compatible with all major e-readers and distributors</p>
-                </div>
-
-                <div class="export-card" onclick="exportPDF()">
-                    <div class="export-icon">📄</div>
-                    <h3>PDF</h3>
-                    <p>Print-ready PDF with professional formatting</p>
-                </div>
-
-                <div class="export-card" onclick="exportDOCX()">
-                    <div class="export-icon">📝</div>
-                    <h3>Word (.docx)</h3>
-                    <p>Editable Word document format</p>
-                </div>
-
-                <div class="export-card" onclick="exportHTML()">
-                    <div class="export-icon">🌐</div>
-                    <h3>HTML</h3>
-                    <p>Web-ready HTML format</p>
-                </div>
-
-                <div class="export-card" onclick="exportMarkdown()">
-                    <div class="export-icon">⬇️</div>
-                    <h3>Markdown</h3>
-                    <p>Plain text Markdown format</p>
-                </div>
-
-                <div class="export-card" onclick="exportJSON()">
-                    <div class="export-icon">💾</div>
-                    <h3>Project Backup</h3>
-                    <p>Complete project backup with all data</p>
-                </div>
-            </div>
-
-            <div class="settings-section" style="margin-top: 3rem;">
-                <h3>📥 Import Manuscript</h3>
-                <div class="upload-zone" id="uploadZone">
-                    <div class="upload-text">📄 Drop .docx file here or click to upload</div>
-                    <div class="upload-hint">Import your existing manuscript</div>
-                    <input type="file" id="fileInput" accept=".docx">
-                </div>
-            </div>
-        </div>
-
-        <!-- Settings Mode -->
-        <div class="view-mode settings-mode" id="settingsMode">
-            <div class="settings-section">
-                <h3>🎨 Editor Appearance</h3>
-
-                <div class="setting-item">
-                    <label>Theme</label>
-                    <select id="themeSelect">
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
-                        <option value="sepia">Sepia</option>
-                    </select>
-                </div>
-
-                <div class="range-group">
-                    <label>
-                        <span>Font Size</span>
-                        <span class="range-value" id="fontSizeValue">16px</span>
-                    </label>
-                    <input type="range" id="fontSizeRange" min="12" max="24" value="16" step="1">
-                </div>
-
-                <div class="range-group">
-                    <label>
-                        <span>Line Height</span>
-                        <span class="range-value" id="lineHeightValue">1.8</span>
-                    </label>
-                    <input type="range" id="lineHeightRange" min="1.2" max="2.4" value="1.8" step="0.1">
-                </div>
-
-                <div class="setting-item">
-                    <label>Font Family</label>
-                    <select id="fontFamilySelect">
-                        <option value="Georgia, serif">Georgia (Serif)</option>
-                        <option value="Merriweather, serif">Merriweather (Serif)</option>
-                        <option value="Inter, sans-serif">Inter (Sans-serif)</option>
-                        <option value="Arial, sans-serif">Arial (Sans-serif)</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h3>🤖 AI Assistant</h3>
-                <div class="setting-item">
-                    <label>OpenAI API Key</label>
-                    <input type="password" id="apiKeyInput" placeholder="sk-...">
-                </div>
-                <div class="setting-item">
-                    <label>Custom AI Prompt</label>
-                    <textarea id="customAiPrompt" placeholder="Enter a custom instruction for AI editing (e.g., 'Make the text more descriptive', 'Add more dialogue')"></textarea>
-                </div>
-                <button class="btn btn-primary" id="runAiBtn" onclick="runCustomAI()">✨ Transform with AI</button>
-            </div>
-
-            <div class="settings-section">
-                <h3>📊 Project Information</h3>
-                <div class="setting-item">
-                    <label>Book Title</label>
-                    <input type="text" id="bookTitleInput" placeholder="Untitled">
-                </div>
-                <div class="setting-item">
+                <div class="form-group">
                     <label>Author Name</label>
-                    <input type="text" id="authorNameInput" placeholder="Your Name">
+                    <input type="text" id="newBookAuthor" placeholder="Your Name">
                 </div>
-                <div class="setting-item">
+                <div class="form-group">
                     <label>Genre</label>
-                    <select id="genreSelect">
+                    <select id="newBookGenre">
                         <option value="">Select Genre</option>
                         <option value="fiction">Fiction</option>
                         <option value="nonfiction">Non-Fiction</option>
@@ -1240,9 +747,9 @@
                     </select>
                 </div>
             </div>
-
-            <div class="settings-section">
-                <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('createBookModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="createBook()">Create Book</button>
             </div>
         </div>
     </div>
@@ -1267,465 +774,282 @@
         </div>
     </div>
 
-    <!-- Character Modal -->
-    <div class="modal" id="characterModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Add Character</h3>
-                <button class="modal-close" onclick="closeModal('characterModal')">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Character Name</label>
-                    <input type="text" id="characterName" placeholder="John Doe">
-                </div>
-                <div class="form-group">
-                    <label>Role</label>
-                    <select id="characterRole">
-                        <option value="Protagonist">Protagonist</option>
-                        <option value="Antagonist">Antagonist</option>
-                        <option value="Supporting">Supporting</option>
-                        <option value="Minor">Minor</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="characterDescription" placeholder="Character traits, background, motivations..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('characterModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="addCharacter()">Add Character</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- World Building Modal -->
-    <div class="modal" id="worldBuildingModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Add Location</h3>
-                <button class="modal-close" onclick="closeModal('worldBuildingModal')">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Location Name</label>
-                    <input type="text" id="locationName" placeholder="The Enchanted Forest">
-                </div>
-                <div class="form-group">
-                    <label>Type</label>
-                    <select id="locationType">
-                        <option value="City">City</option>
-                        <option value="Building">Building</option>
-                        <option value="Landscape">Landscape</option>
-                        <option value="Country">Country</option>
-                        <option value="Planet">Planet</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="locationDescription" placeholder="Describe this location..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('worldBuildingModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="addWorldBuilding()">Add Location</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Research Modal -->
-    <div class="modal" id="researchModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Add Research</h3>
-                <button class="modal-close" onclick="closeModal('researchModal')">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Topic</label>
-                    <input type="text" id="researchTopic" placeholder="Medieval Warfare">
-                </div>
-                <div class="form-group">
-                    <label>Source</label>
-                    <input type="text" id="researchSource" placeholder="Book, Website, Interview...">
-                </div>
-                <div class="form-group">
-                    <label>Notes</label>
-                    <textarea id="researchNotes" placeholder="Your research notes..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('researchModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="addResearch()">Add Research</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Timeline Modal -->
-    <div class="modal" id="timelineModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Add Timeline Event</h3>
-                <button class="modal-close" onclick="closeModal('timelineModal')">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Event Title</label>
-                    <input type="text" id="eventTitle" placeholder="The Great Battle">
-                </div>
-                <div class="form-group">
-                    <label>Date/Time in Story</label>
-                    <input type="text" id="eventDate" placeholder="Day 5, Year 2049">
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="eventDescription" placeholder="What happens in this event..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('timelineModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="addTimelineEvent()">Add Event</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         // Application State
         let appState = {
-            chapters: [],
-            characters: [],
-            worldBuilding: [],
-            research: [],
-            timeline: [],
-            currentChapterId: null,
-            bookTitle: 'Untitled Book',
-            authorName: '',
-            genre: '',
-            dailyGoal: 1000,
-            bookGoal: 80000,
-            todayWords: 0,
-            streak: 0,
-            lastWriteDate: null,
-            settings: {
-                theme: 'light',
-                fontSize: 16,
-                lineHeight: 1.8,
-                fontFamily: 'Georgia, serif',
-                apiKey: ''
-            }
+            books: [],
+            currentBookId: null,
+            currentChapterId: null
         };
+
+        // Initialize App
+        function initApp() {
+            loadState();
+            renderBookshelf();
+            setupSearchListener();
+        }
 
         // Load state from localStorage
         function loadState() {
-            const saved = localStorage.getItem('reedsyStudioState');
+            const saved = localStorage.getItem('reedsyStudioBooks');
             if (saved) {
-                appState = { ...appState, ...JSON.parse(saved) };
-                renderChapters();
-                renderCharacters();
-                renderWorldBuilding();
-                renderResearch();
-                renderTimeline();
-                updateWordCount();
-                updateGoalsDisplay();
-                applySettings();
-            } else {
-                // Create default chapter
-                addChapter('Chapter 1', true);
+                appState = JSON.parse(saved);
             }
         }
 
         // Save state to localStorage
         function saveState() {
-            localStorage.setItem('reedsyStudioState', JSON.stringify(appState));
-        }
-
-        // View Switching
-        function switchView(view) {
-            document.querySelectorAll('.view-mode').forEach(mode => mode.classList.remove('active'));
-            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-
-            const viewMap = {
-                'write': 'writeMode',
-                'outline': 'outlineMode',
-                'goals': 'goalsMode',
-                'export': 'exportMode',
-                'settings': 'settingsMode'
-            };
-
-            document.getElementById(viewMap[view]).classList.add('active');
-            event.target.classList.add('active');
-
-            if (view === 'goals') {
-                updateGoalsDisplay();
-            }
+            localStorage.setItem('reedsyStudioBooks', JSON.stringify(appState));
         }
 
         // Modal Functions
+        function openCreateBookModal() {
+            document.getElementById('createBookModal').classList.add('active');
+            document.getElementById('newBookTitle').value = '';
+            document.getElementById('newBookAuthor').value = '';
+            document.getElementById('newBookGenre').value = '';
+        }
+
         function openAddChapterModal() {
             document.getElementById('addChapterModal').classList.add('active');
-            document.getElementById('newChapterTitle').value = `Chapter ${appState.chapters.length + 1}`;
-        }
-
-        function openCharacterModal() {
-            document.getElementById('characterModal').classList.add('active');
-        }
-
-        function openWorldBuildingModal() {
-            document.getElementById('worldBuildingModal').classList.add('active');
-        }
-
-        function openResearchModal() {
-            document.getElementById('researchModal').classList.add('active');
-        }
-
-        function openTimelineModal() {
-            document.getElementById('timelineModal').classList.add('active');
+            const currentBook = getCurrentBook();
+            const chapterCount = currentBook ? currentBook.chapters.length : 0;
+            document.getElementById('newChapterTitle').value = `Chapter ${chapterCount + 1}`;
         }
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
         }
 
-        // Chapter Management
-        function addChapter(title, isDefault = false) {
-            const chapterTitle = isDefault ? title : document.getElementById('newChapterTitle').value.trim();
-            if (!chapterTitle) {
-                alert('Please enter a chapter title');
-                return;
+        // Create New Book
+        function createBook() {
+            const title = document.getElementById('newBookTitle').value.trim() || 'Untitled Book';
+            const author = document.getElementById('newBookAuthor').value.trim() || 'Unknown Author';
+            const genre = document.getElementById('newBookGenre').value;
+
+            const book = {
+                id: Date.now(),
+                title,
+                author,
+                genre,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                chapters: [],
+                wordCount: 0
+            };
+
+            // Add default first chapter
+            book.chapters.push({
+                id: Date.now() + 1,
+                title: 'Chapter 1',
+                content: '',
+                wordCount: 0,
+                createdAt: new Date().toISOString()
+            });
+
+            appState.books.push(book);
+            saveState();
+            renderBookshelf();
+            closeModal('createBookModal');
+        }
+
+        // Render Bookshelf
+        function renderBookshelf() {
+            const booksGrid = document.getElementById('booksGrid');
+            const emptyState = document.getElementById('emptyState');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            let filteredBooks = appState.books;
+            if (searchTerm) {
+                filteredBooks = appState.books.filter(book =>
+                    book.title.toLowerCase().includes(searchTerm) ||
+                    book.author.toLowerCase().includes(searchTerm) ||
+                    (book.genre && book.genre.toLowerCase().includes(searchTerm))
+                );
             }
+
+            if (filteredBooks.length === 0) {
+                booksGrid.style.display = 'none';
+                emptyState.style.display = 'block';
+            } else {
+                booksGrid.style.display = 'grid';
+                emptyState.style.display = 'none';
+                booksGrid.innerHTML = filteredBooks.map(book => `
+                    <div class="book-card" onclick="openBook(${book.id})">
+                        <div class="book-cover">
+                            <div class="book-cover-placeholder">📖</div>
+                        </div>
+                        <div class="book-info">
+                            <h3 class="book-title">${book.title}</h3>
+                            <p class="book-author">by ${book.author}</p>
+                            <div class="book-meta">
+                                <div class="book-meta-item">
+                                    <span>📅</span>
+                                    <span>${new Date(book.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <div class="book-meta-item">
+                                    <span>📝</span>
+                                    <span>${book.wordCount.toLocaleString()} words</span>
+                                </div>
+                            </div>
+                            <div class="book-actions" onclick="event.stopPropagation()">
+                                <button class="book-action-btn primary" onclick="openBook(${book.id})">✍️ Write</button>
+                                <button class="book-action-btn" onclick="manageBook(${book.id})">⚙️ Manage</button>
+                                <button class="book-action-btn" onclick="exportBook(${book.id})">💾 Export</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Search Functionality
+        function setupSearchListener() {
+            document.getElementById('searchInput').addEventListener('input', () => {
+                renderBookshelf();
+            });
+        }
+
+        // Open Book in Editor
+        function openBook(bookId) {
+            appState.currentBookId = bookId;
+            const book = getCurrentBook();
+
+            if (book && book.chapters.length > 0) {
+                appState.currentChapterId = book.chapters[0].id;
+            }
+
+            // Switch to editor view
+            switchView('editor');
+            renderChapters();
+            loadCurrentChapter();
+            saveState();
+        }
+
+        // Get Current Book
+        function getCurrentBook() {
+            return appState.books.find(b => b.id === appState.currentBookId);
+        }
+
+        // Get Current Chapter
+        function getCurrentChapter() {
+            const book = getCurrentBook();
+            if (!book) return null;
+            return book.chapters.find(c => c.id === appState.currentChapterId);
+        }
+
+        // Switch View
+        function switchView(view) {
+            document.querySelectorAll('.view-mode').forEach(mode => {
+                mode.classList.remove('active');
+            });
+
+            if (view === 'bookshelf') {
+                document.getElementById('bookshelfView').classList.add('active');
+                updateNavActions('bookshelf');
+            } else if (view === 'editor') {
+                document.getElementById('editorView').classList.add('active');
+                updateNavActions('editor');
+            }
+        }
+
+        // Update Navigation Actions
+        function updateNavActions(view) {
+            const navActions = document.getElementById('navActions');
+
+            if (view === 'bookshelf') {
+                navActions.innerHTML = '';
+            } else if (view === 'editor') {
+                const book = getCurrentBook();
+                navActions.innerHTML = `
+                    <button class="nav-btn secondary" onclick="goToBookshelf()">← Back to Library</button>
+                    <span style="color: var(--text-white); font-weight: 600;">${book ? book.title : 'Untitled'}</span>
+                `;
+            }
+        }
+
+        // Go to Bookshelf
+        function goToBookshelf() {
+            appState.currentBookId = null;
+            appState.currentChapterId = null;
+            switchView('bookshelf');
+            renderBookshelf();
+            saveState();
+        }
+
+        // Render Chapters
+        function renderChapters() {
+            const book = getCurrentBook();
+            if (!book) return;
+
+            const list = document.getElementById('chapterList');
+            list.innerHTML = book.chapters.map(chapter => `
+                <li class="chapter-item ${chapter.id === appState.currentChapterId ? 'active' : ''}"
+                    onclick="switchToChapter(${chapter.id})">
+                    <div class="chapter-title-text">${chapter.title}</div>
+                    <div class="chapter-meta-text">${chapter.wordCount} words</div>
+                </li>
+            `).join('');
+        }
+
+        // Add Chapter
+        function addChapter() {
+            const book = getCurrentBook();
+            if (!book) return;
+
+            const title = document.getElementById('newChapterTitle').value.trim() || `Chapter ${book.chapters.length + 1}`;
 
             const chapter = {
                 id: Date.now(),
-                title: chapterTitle,
+                title,
                 content: '',
                 wordCount: 0,
                 createdAt: new Date().toISOString()
             };
 
-            appState.chapters.push(chapter);
+            book.chapters.push(chapter);
             renderChapters();
             saveState();
-
-            if (!isDefault) {
-                closeModal('addChapterModal');
-                switchToChapter(chapter.id);
-            }
+            closeModal('addChapterModal');
+            switchToChapter(chapter.id);
         }
 
-        function renderChapters() {
-            const list = document.getElementById('chapterList');
-            list.innerHTML = appState.chapters.map(chapter => `
-                <li class="chapter-item ${chapter.id === appState.currentChapterId ? 'active' : ''}"
-                    onclick="switchToChapter(${chapter.id})">
-                    <div class="chapter-title">${chapter.title}</div>
-                    <div class="chapter-meta">${chapter.wordCount} words</div>
-                    <div class="chapter-actions">
-                        <button class="chapter-action-btn" onclick="event.stopPropagation(); deleteChapter(${chapter.id})">🗑️</button>
-                    </div>
-                </li>
-            `).join('');
-
-            if (appState.currentChapterId === null && appState.chapters.length > 0) {
-                switchToChapter(appState.chapters[0].id);
-            }
-        }
-
+        // Switch to Chapter
         function switchToChapter(chapterId) {
             // Save current chapter
-            if (appState.currentChapterId !== null) {
-                const currentChapter = appState.chapters.find(c => c.id === appState.currentChapterId);
-                if (currentChapter) {
-                    currentChapter.title = document.getElementById('chapterTitleInput').value;
-                    currentChapter.content = document.getElementById('editorContent').innerHTML;
-                    currentChapter.wordCount = getWordCount(document.getElementById('editorContent').innerText);
-                }
-            }
+            saveCurrentChapter();
 
             // Load new chapter
             appState.currentChapterId = chapterId;
-            const chapter = appState.chapters.find(c => c.id === chapterId);
-            if (chapter) {
-                document.getElementById('chapterTitleInput').value = chapter.title;
-                document.getElementById('editorContent').innerHTML = chapter.content;
-            }
-
-            renderChapters();
-            updateWordCount();
-            saveState();
-        }
-
-        function deleteChapter(chapterId) {
-            if (!confirm('Delete this chapter?')) return;
-
-            appState.chapters = appState.chapters.filter(c => c.id !== chapterId);
-            if (appState.currentChapterId === chapterId) {
-                appState.currentChapterId = appState.chapters.length > 0 ? appState.chapters[0].id : null;
-            }
+            loadCurrentChapter();
             renderChapters();
             saveState();
         }
 
-        // Character Management
-        function addCharacter() {
-            const name = document.getElementById('characterName').value.trim();
-            const role = document.getElementById('characterRole').value;
-            const description = document.getElementById('characterDescription').value.trim();
+        // Save Current Chapter
+        function saveCurrentChapter() {
+            const chapter = getCurrentChapter();
+            if (!chapter) return;
 
-            if (!name) {
-                alert('Please enter a character name');
-                return;
+            chapter.title = document.getElementById('chapterTitleInput').value;
+            chapter.content = document.getElementById('editorContent').innerHTML;
+            chapter.wordCount = getWordCount(document.getElementById('editorContent').innerText);
+
+            // Update book word count
+            const book = getCurrentBook();
+            if (book) {
+                book.wordCount = book.chapters.reduce((sum, ch) => sum + ch.wordCount, 0);
+                book.updatedAt = new Date().toISOString();
             }
-
-            const character = {
-                id: Date.now(),
-                name,
-                role,
-                description
-            };
-
-            appState.characters.push(character);
-            renderCharacters();
-            saveState();
-            closeModal('characterModal');
-
-            // Clear form
-            document.getElementById('characterName').value = '';
-            document.getElementById('characterDescription').value = '';
         }
 
-        function renderCharacters() {
-            const list = document.getElementById('charactersList');
-            list.innerHTML = appState.characters.map(char => `
-                <div class="board-item">
-                    <div class="item-title">${char.name}</div>
-                    <div class="item-description">${char.description}</div>
-                    <div class="item-tags">
-                        <span class="tag">${char.role}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
+        // Load Current Chapter
+        function loadCurrentChapter() {
+            const chapter = getCurrentChapter();
+            if (!chapter) return;
 
-        // World Building Management
-        function addWorldBuilding() {
-            const name = document.getElementById('locationName').value.trim();
-            const type = document.getElementById('locationType').value;
-            const description = document.getElementById('locationDescription').value.trim();
-
-            if (!name) {
-                alert('Please enter a location name');
-                return;
-            }
-
-            const location = {
-                id: Date.now(),
-                name,
-                type,
-                description
-            };
-
-            appState.worldBuilding.push(location);
-            renderWorldBuilding();
-            saveState();
-            closeModal('worldBuildingModal');
-
-            // Clear form
-            document.getElementById('locationName').value = '';
-            document.getElementById('locationDescription').value = '';
-        }
-
-        function renderWorldBuilding() {
-            const list = document.getElementById('worldBuildingList');
-            list.innerHTML = appState.worldBuilding.map(loc => `
-                <div class="board-item">
-                    <div class="item-title">${loc.name}</div>
-                    <div class="item-description">${loc.description}</div>
-                    <div class="item-tags">
-                        <span class="tag">${loc.type}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Research Management
-        function addResearch() {
-            const topic = document.getElementById('researchTopic').value.trim();
-            const source = document.getElementById('researchSource').value.trim();
-            const notes = document.getElementById('researchNotes').value.trim();
-
-            if (!topic) {
-                alert('Please enter a research topic');
-                return;
-            }
-
-            const research = {
-                id: Date.now(),
-                topic,
-                source,
-                notes
-            };
-
-            appState.research.push(research);
-            renderResearch();
-            saveState();
-            closeModal('researchModal');
-
-            // Clear form
-            document.getElementById('researchTopic').value = '';
-            document.getElementById('researchSource').value = '';
-            document.getElementById('researchNotes').value = '';
-        }
-
-        function renderResearch() {
-            const list = document.getElementById('researchList');
-            list.innerHTML = appState.research.map(res => `
-                <div class="board-item">
-                    <div class="item-title">${res.topic}</div>
-                    <div class="item-description">${res.notes}</div>
-                    ${res.source ? `<div class="item-tags"><span class="tag">${res.source}</span></div>` : ''}
-                </div>
-            `).join('');
-        }
-
-        // Timeline Management
-        function addTimelineEvent() {
-            const title = document.getElementById('eventTitle').value.trim();
-            const date = document.getElementById('eventDate').value.trim();
-            const description = document.getElementById('eventDescription').value.trim();
-
-            if (!title) {
-                alert('Please enter an event title');
-                return;
-            }
-
-            const event = {
-                id: Date.now(),
-                title,
-                date,
-                description
-            };
-
-            appState.timeline.push(event);
-            renderTimeline();
-            saveState();
-            closeModal('timelineModal');
-
-            // Clear form
-            document.getElementById('eventTitle').value = '';
-            document.getElementById('eventDate').value = '';
-            document.getElementById('eventDescription').value = '';
-        }
-
-        function renderTimeline() {
-            const list = document.getElementById('timelineList');
-            list.innerHTML = appState.timeline.map(evt => `
-                <div class="board-item">
-                    <div class="item-title">${evt.title}</div>
-                    <div class="item-description">${evt.description}</div>
-                    ${evt.date ? `<div class="item-tags"><span class="tag">${evt.date}</span></div>` : ''}
-                </div>
-            `).join('');
+            document.getElementById('chapterTitleInput').value = chapter.title;
+            document.getElementById('editorContent').innerHTML = chapter.content;
         }
 
         // Word Count
@@ -1733,304 +1057,61 @@
             return text.trim().split(/\s+/).filter(word => word.length > 0).length;
         }
 
-        function updateWordCount() {
-            // Save current chapter content
-            if (appState.currentChapterId !== null) {
-                const currentChapter = appState.chapters.find(c => c.id === appState.currentChapterId);
-                if (currentChapter) {
-                    const editorContent = document.getElementById('editorContent');
-                    if (editorContent) {
-                        currentChapter.content = editorContent.innerHTML;
-                        currentChapter.wordCount = getWordCount(editorContent.innerText);
-                    }
-                }
-            }
-
-            const totalWords = appState.chapters.reduce((sum, ch) => sum + ch.wordCount, 0);
-            document.getElementById('totalWordCount').textContent = totalWords.toLocaleString();
-
-            // Check if we're writing today
-            const today = new Date().toDateString();
-            if (appState.lastWriteDate !== today) {
-                appState.todayWords = 0;
-                appState.lastWriteDate = today;
-            }
-
-            saveState();
-        }
-
-        // Goals Management
-        function updateGoals() {
-            appState.dailyGoal = parseInt(document.getElementById('dailyGoalInput').value) || 1000;
-            appState.bookGoal = parseInt(document.getElementById('bookGoalInput').value) || 80000;
-            saveState();
-            updateGoalsDisplay();
-            alert('Goals updated!');
-        }
-
-        function updateGoalsDisplay() {
-            const totalWords = appState.chapters.reduce((sum, ch) => sum + ch.wordCount, 0);
-
-            // Update goal cards
-            document.getElementById('currentWordCount').textContent = totalWords.toLocaleString();
-            document.getElementById('todayWords').textContent = appState.todayWords.toLocaleString();
-            document.getElementById('streakDays').textContent = appState.streak;
-
-            // Update book progress
-            const bookProgress = Math.min(100, (totalWords / appState.bookGoal) * 100);
-            document.getElementById('bookGoalProgress').textContent = `${totalWords.toLocaleString()} / ${appState.bookGoal.toLocaleString()} words`;
-            document.getElementById('bookProgressFill').style.width = bookProgress + '%';
-            document.getElementById('bookProgressFill').textContent = Math.round(bookProgress) + '%';
-
-            // Update daily progress
-            const dailyProgress = Math.min(100, (appState.todayWords / appState.dailyGoal) * 100);
-            document.getElementById('dailyGoalProgress').textContent = `${appState.todayWords.toLocaleString()} / ${appState.dailyGoal.toLocaleString()} words`;
-            document.getElementById('dailyProgressFill').style.width = dailyProgress + '%';
-            document.getElementById('dailyProgressFill').textContent = Math.round(dailyProgress) + '%';
-
-            // Update inputs
-            document.getElementById('dailyGoalInput').value = appState.dailyGoal;
-            document.getElementById('bookGoalInput').value = appState.bookGoal;
-        }
-
-        // Settings Management
-        function saveSettings() {
-            appState.bookTitle = document.getElementById('bookTitleInput').value;
-            appState.authorName = document.getElementById('authorNameInput').value;
-            appState.genre = document.getElementById('genreSelect').value;
-            appState.settings.apiKey = document.getElementById('apiKeyInput').value;
-            saveState();
-            alert('Settings saved!');
-        }
-
-        function applySettings() {
-            document.getElementById('bookTitleInput').value = appState.bookTitle;
-            document.getElementById('authorNameInput').value = appState.authorName;
-            document.getElementById('genreSelect').value = appState.genre;
-            document.getElementById('apiKeyInput').value = appState.settings.apiKey;
-            document.getElementById('themeSelect').value = appState.settings.theme;
-            document.getElementById('fontSizeRange').value = appState.settings.fontSize;
-            document.getElementById('lineHeightRange').value = appState.settings.lineHeight;
-            document.getElementById('fontFamilySelect').value = appState.settings.fontFamily;
-
+        // Auto-save
+        let saveTimeout;
+        document.addEventListener('DOMContentLoaded', () => {
             const editorContent = document.getElementById('editorContent');
+            const chapterTitleInput = document.getElementById('chapterTitleInput');
+
             if (editorContent) {
-                editorContent.style.fontSize = appState.settings.fontSize + 'px';
-                editorContent.style.lineHeight = appState.settings.lineHeight;
-                editorContent.style.fontFamily = appState.settings.fontFamily;
-            }
-        }
-
-        // Settings event listeners
-        document.getElementById('fontSizeRange').addEventListener('input', (e) => {
-            const value = e.target.value;
-            document.getElementById('fontSizeValue').textContent = value + 'px';
-            document.getElementById('editorContent').style.fontSize = value + 'px';
-            appState.settings.fontSize = parseInt(value);
-            saveState();
-        });
-
-        document.getElementById('lineHeightRange').addEventListener('input', (e) => {
-            const value = e.target.value;
-            document.getElementById('lineHeightValue').textContent = value;
-            document.getElementById('editorContent').style.lineHeight = value;
-            appState.settings.lineHeight = parseFloat(value);
-            saveState();
-        });
-
-        document.getElementById('fontFamilySelect').addEventListener('change', (e) => {
-            const value = e.target.value;
-            document.getElementById('editorContent').style.fontFamily = value;
-            appState.settings.fontFamily = value;
-            saveState();
-        });
-
-        // Custom AI Transform
-        async function runCustomAI() {
-            const apiKey = document.getElementById('apiKeyInput').value.trim();
-            const prompt = document.getElementById('customAiPrompt').value.trim();
-
-            if (!apiKey) {
-                alert('Please enter your OpenAI API key in settings');
-                return;
-            }
-
-            if (!prompt) {
-                alert('Please enter a custom AI prompt');
-                return;
-            }
-
-            if (appState.currentChapterId === null) {
-                alert('No chapter selected');
-                return;
-            }
-
-            const currentChapter = appState.chapters.find(c => c.id === appState.currentChapterId);
-            const content = document.getElementById('editorContent').innerText;
-
-            if (!content.trim()) {
-                alert('No content to transform');
-                return;
-            }
-
-            document.getElementById('runAiBtn').disabled = true;
-            document.getElementById('runAiBtn').textContent = '✨ Transforming...';
-
-            try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: 'gpt-4o-mini',
-                        messages: [
-                            {
-                                role: 'system',
-                                content: 'You are a professional book editor. Transform the text according to the user\'s instructions. Return only the transformed text in HTML format with <p> tags for paragraphs.'
-                            },
-                            {
-                                role: 'user',
-                                content: `Transform this text: "${content}"\n\nInstruction: ${prompt}`
-                            }
-                        ],
-                        temperature: 0.7
-                    })
+                editorContent.addEventListener('input', () => {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(() => {
+                        saveCurrentChapter();
+                        saveState();
+                        renderChapters();
+                    }, 1000);
                 });
-
-                if (!response.ok) throw new Error(`API Error ${response.status}`);
-
-                const data = await response.json();
-                let transformed = data.choices[0].message.content;
-
-                // Clean up markdown
-                transformed = transformed.replace(/```html\n?/g, '').replace(/```\n?/g, '');
-
-                document.getElementById('editorContent').innerHTML = transformed;
-                updateWordCount();
-                alert('✅ Content transformed successfully!');
-
-            } catch (error) {
-                alert(`Error: ${error.message}`);
-            } finally {
-                document.getElementById('runAiBtn').disabled = false;
-                document.getElementById('runAiBtn').textContent = '✨ Transform with AI';
             }
-        }
 
-        // Export Functions
-        async function exportEPUB() {
-            try {
-                const zip = new JSZip();
-
-                // Create EPUB structure
-                zip.file('mimetype', 'application/epub+zip');
-
-                // META-INF
-                const metaInf = zip.folder('META-INF');
-                metaInf.file('container.xml', `<?xml version="1.0"?>
-<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-  <rootfiles>
-    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
-  </rootfiles>
-</container>`);
-
-                // OEBPS
-                const oebps = zip.folder('OEBPS');
-
-                // content.opf
-                const manifest = appState.chapters.map((ch, i) =>
-                    `<item id="chapter${i}" href="chapter${i}.xhtml" media-type="application/xhtml+xml"/>`
-                ).join('\n    ');
-
-                const spine = appState.chapters.map((ch, i) =>
-                    `<itemref idref="chapter${i}"/>`
-                ).join('\n    ');
-
-                oebps.file('content.opf', `<?xml version="1.0" encoding="UTF-8"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title>${appState.bookTitle}</dc:title>
-    <dc:creator>${appState.authorName || 'Unknown'}</dc:creator>
-    <dc:language>en</dc:language>
-  </metadata>
-  <manifest>
-    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
-    ${manifest}
-  </manifest>
-  <spine toc="ncx">
-    ${spine}
-  </spine>
-</package>`);
-
-                // toc.ncx
-                const navPoints = appState.chapters.map((ch, i) => `
-    <navPoint id="chapter${i}">
-      <navLabel><text>${ch.title}</text></navLabel>
-      <content src="chapter${i}.xhtml"/>
-    </navPoint>`
-                ).join('');
-
-                oebps.file('toc.ncx', `<?xml version="1.0" encoding="UTF-8"?>
-<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
-  <head>
-    <meta name="dtb:uid" content="urn:uuid:${Date.now()}"/>
-  </head>
-  <docTitle><text>${appState.bookTitle}</text></docTitle>
-  <navMap>${navPoints}
-  </navMap>
-</ncx>`);
-
-                // Chapter files
-                appState.chapters.forEach((ch, i) => {
-                    oebps.file(`chapter${i}.xhtml`, `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <title>${ch.title}</title>
-</head>
-<body>
-  <h1>${ch.title}</h1>
-  ${ch.content}
-</body>
-</html>`);
+            if (chapterTitleInput) {
+                chapterTitleInput.addEventListener('input', () => {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(() => {
+                        saveCurrentChapter();
+                        saveState();
+                        renderChapters();
+                    }, 500);
                 });
-
-                // Generate ZIP
-                const blob = await zip.generateAsync({type: 'blob'});
-                saveAs(blob, `${appState.bookTitle}.epub`);
-
-            } catch (error) {
-                alert('Error creating EPUB: ' + error.message);
             }
+        });
+
+        // Manage Book (placeholder)
+        function manageBook(bookId) {
+            alert('Manage book functionality coming soon!');
         }
 
-        function exportPDF() {
-            window.print();
-        }
+        // Export Book (placeholder)
+        function exportBook(bookId) {
+            const book = appState.books.find(b => b.id === bookId);
+            if (!book) return;
 
-        function exportDOCX() {
-            alert('DOCX export requires a server-side converter. For now, use "Copy All" and paste into Word.');
-        }
-
-        function exportHTML() {
-            const html = `<!DOCTYPE html>
+            let html = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>${appState.bookTitle}</title>
+    <title>${book.title}</title>
     <style>
         body { font-family: Georgia, serif; line-height: 1.8; max-width: 800px; margin: 2rem auto; padding: 2rem; }
         h1 { font-size: 2.5rem; margin: 2rem 0 1rem; }
         h2 { font-size: 2rem; margin: 2rem 0 1rem; }
-        p { margin-bottom: 1rem; text-align: justify; }
+        p { margin-bottom: 1rem; }
     </style>
 </head>
 <body>
-    <h1>${appState.bookTitle}</h1>
-    <p><em>by ${appState.authorName || 'Unknown'}</em></p>
-    ${appState.chapters.map(ch => `
+    <h1>${book.title}</h1>
+    <p><em>by ${book.author}</em></p>
+    ${book.chapters.map(ch => `
         <h2>${ch.title}</h2>
         ${ch.content}
     `).join('\n')}
@@ -2038,159 +1119,19 @@
 </html>`;
 
             const blob = new Blob([html], { type: 'text/html' });
-            saveAs(blob, `${appState.bookTitle}.html`);
+            saveAs(blob, `${book.title}.html`);
         }
 
-        function exportMarkdown() {
-            let md = `# ${appState.bookTitle}\n\n`;
-            md += `*by ${appState.authorName || 'Unknown'}*\n\n`;
-            md += '---\n\n';
-
-            appState.chapters.forEach(ch => {
-                md += `## ${ch.title}\n\n`;
-                const content = ch.content
-                    .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n')
-                    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
-                    .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n')
-                    .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
-                    .replace(/<br\s*\/?>/gi, '\n')
-                    .replace(/<[^>]+>/g, '')
-                    .trim();
-                md += content + '\n\n---\n\n';
-            });
-
-            const blob = new Blob([md], { type: 'text/markdown' });
-            saveAs(blob, `${appState.bookTitle}.md`);
-        }
-
-        function exportJSON() {
-            const blob = new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' });
-            saveAs(blob, `${appState.bookTitle}-backup.json`);
-        }
-
-        // File Upload
-        const uploadZone = document.getElementById('uploadZone');
-        const fileInput = document.getElementById('fileInput');
-
-        uploadZone.addEventListener('click', () => fileInput.click());
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) processFile(e.target.files[0]);
-        });
-
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.classList.add('dragover');
-        });
-
-        uploadZone.addEventListener('dragleave', () => {
-            uploadZone.classList.remove('dragover');
-        });
-
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length > 0) {
-                processFile(e.dataTransfer.files[0]);
-            }
-        });
-
-        async function processFile(file) {
-            if (!file.name.endsWith('.docx')) {
-                alert('Please upload a .docx file');
-                return;
-            }
-
-            try {
-                const arrayBuffer = await file.arrayBuffer();
-                const result = await mammoth.convertToHtml({arrayBuffer: arrayBuffer});
-
-                let html = result.value;
-
-                // Split by headings to create chapters
-                const parts = html.split(/<h1[^>]*>/i);
-
-                if (parts.length > 1) {
-                    // Clear existing chapters
-                    if (confirm('This will replace all existing chapters. Continue?')) {
-                        appState.chapters = [];
-
-                        for (let i = 1; i < parts.length; i++) {
-                            const titleMatch = parts[i].match(/^(.*?)<\/h1>/i);
-                            const title = titleMatch ? titleMatch[1].trim() : `Chapter ${i}`;
-                            const content = parts[i].replace(/^(.*?)<\/h1>/i, '').trim();
-
-                            appState.chapters.push({
-                                id: Date.now() + i,
-                                title: title,
-                                content: content,
-                                wordCount: getWordCount(content.replace(/<[^>]+>/g, '')),
-                                createdAt: new Date().toISOString()
-                            });
-                        }
-
-                        renderChapters();
-                        saveState();
-                        switchView('write');
-                        alert(`Imported ${appState.chapters.length} chapters!`);
-                    }
-                } else {
-                    // Create single chapter
-                    if (confirm('Import as a single chapter?')) {
-                        appState.chapters.push({
-                            id: Date.now(),
-                            title: file.name.replace('.docx', ''),
-                            content: html,
-                            wordCount: getWordCount(html.replace(/<[^>]+>/g, '')),
-                            createdAt: new Date().toISOString()
-                        });
-
-                        renderChapters();
-                        saveState();
-                        switchView('write');
-                        alert('Imported successfully!');
-                    }
-                }
-
-            } catch (error) {
-                alert('Error processing file: ' + error.message);
-            }
-        }
-
-        // Auto-save on editor change
-        let saveTimeout;
-        document.getElementById('editorContent').addEventListener('input', () => {
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(() => {
-                updateWordCount();
-            }, 1000);
-        });
-
-        document.getElementById('chapterTitleInput').addEventListener('input', () => {
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(() => {
-                if (appState.currentChapterId !== null) {
-                    const chapter = appState.chapters.find(c => c.id === appState.currentChapterId);
-                    if (chapter) {
-                        chapter.title = document.getElementById('chapterTitleInput').value;
-                        renderChapters();
-                        saveState();
-                    }
-                }
-            }, 500);
-        });
-
-        // Initialize app
+        // Initialize on load
         window.addEventListener('load', () => {
-            loadState();
+            initApp();
         });
 
         // Prevent data loss
         window.addEventListener('beforeunload', (e) => {
-            if (appState.chapters.length > 0) {
-                updateWordCount();
-                e.preventDefault();
-                e.returnValue = '';
+            if (appState.currentChapterId !== null) {
+                saveCurrentChapter();
+                saveState();
             }
         });
     </script>
