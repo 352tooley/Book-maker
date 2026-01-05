@@ -593,10 +593,77 @@
         .editor-container {
             background: var(--bg-primary);
             overflow-y: auto;
-            padding: 3rem;
+            padding: 0;
             max-width: 850px;
             margin: 0 auto;
             width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-wrapper {
+            padding: 3rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Rich Text Toolbar */
+        .formatting-toolbar {
+            position: sticky;
+            top: 0;
+            background: var(--bg-primary);
+            border-bottom: 2px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 0.25rem;
+            padding: 0 0.5rem;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+
+        .format-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--heading-font);
+        }
+
+        .format-btn:hover {
+            background: var(--border-color);
+            transform: translateY(-1px);
+        }
+
+        .format-btn.active {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .format-btn.heading {
+            width: auto;
+            padding: 0 0.75rem;
+            font-size: 0.85rem;
         }
 
         .section-title-input {
@@ -630,6 +697,57 @@
         .editor-content:focus {
             border-color: var(--accent-primary);
             background: var(--bg-secondary);
+        }
+
+        /* Editor Content Formatting Styles */
+        .editor-content h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 2rem 0 1rem;
+            font-family: var(--heading-font);
+            color: var(--text-primary);
+        }
+
+        .editor-content h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+            font-family: var(--heading-font);
+            color: var(--text-primary);
+        }
+
+        .editor-content h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 1.25rem 0 0.5rem;
+            font-family: var(--heading-font);
+            color: var(--text-primary);
+        }
+
+        .editor-content ul,
+        .editor-content ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+
+        .editor-content li {
+            margin: 0.5rem 0;
+        }
+
+        .editor-content p {
+            margin: 1rem 0;
+        }
+
+        .editor-content strong {
+            font-weight: 700;
+        }
+
+        .editor-content em {
+            font-style: italic;
+        }
+
+        .editor-content u {
+            text-decoration: underline;
         }
 
         /* ===== RIGHT SIDEBAR (TOOLS) ===== */
@@ -1081,8 +1199,29 @@
                 </div>
             </div>
             <div class="editor-container">
-                <input type="text" class="section-title-input" id="sectionTitleInput" placeholder="Title">
-                <div class="editor-content" contenteditable="true" id="editorContent"></div>
+                <div class="formatting-toolbar" id="formattingToolbar">
+                    <div class="toolbar-group">
+                        <button class="format-btn" onclick="formatText('bold')" title="Bold (Ctrl+B)"><strong>B</strong></button>
+                        <button class="format-btn" onclick="formatText('italic')" title="Italic (Ctrl+I)"><em>I</em></button>
+                        <button class="format-btn" onclick="formatText('underline')" title="Underline (Ctrl+U)"><u>U</u></button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="format-btn heading" onclick="formatText('h1')" title="Heading 1">H1</button>
+                        <button class="format-btn heading" onclick="formatText('h2')" title="Heading 2">H2</button>
+                        <button class="format-btn heading" onclick="formatText('h3')" title="Heading 3">H3</button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="format-btn" onclick="formatText('insertUnorderedList')" title="Bullet List">•</button>
+                        <button class="format-btn" onclick="formatText('insertOrderedList')" title="Numbered List">1.</button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="format-btn" onclick="formatText('removeFormat')" title="Clear Formatting">✕</button>
+                    </div>
+                </div>
+                <div class="editor-wrapper">
+                    <input type="text" class="section-title-input" id="sectionTitleInput" placeholder="Title">
+                    <div class="editor-content" contenteditable="true" id="editorContent"></div>
+                </div>
             </div>
             <div class="tools-sidebar">
                 <div id="toolsPanels">
@@ -1685,6 +1824,48 @@
             renderManuscriptStructure();
             saveState();
         }
+
+        // ===== RICH TEXT FORMATTING =====
+
+        // Format Text
+        function formatText(command) {
+            const editor = document.getElementById('editorContent');
+            editor.focus();
+
+            if (command === 'h1' || command === 'h2' || command === 'h3') {
+                // For headings, use formatBlock
+                document.execCommand('formatBlock', false, command);
+            } else {
+                // For other formatting commands
+                document.execCommand(command, false, null);
+            }
+
+            // Save after formatting
+            setTimeout(() => {
+                saveCurrentSection();
+                saveState();
+            }, 100);
+        }
+
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key.toLowerCase()) {
+                    case 'b':
+                        e.preventDefault();
+                        formatText('bold');
+                        break;
+                    case 'i':
+                        e.preventDefault();
+                        formatText('italic');
+                        break;
+                    case 'u':
+                        e.preventDefault();
+                        formatText('underline');
+                        break;
+                }
+            }
+        });
 
         // ===== RIGHT SIDEBAR TOOLS =====
 
