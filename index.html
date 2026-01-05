@@ -269,8 +269,12 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            background: #2a2a2a;
+            background: var(--bg-primary);
             position: relative;
+        }
+
+        .preview-container.page-mode {
+            background: #2a2a2a;
         }
 
         .preview-controls {
@@ -316,12 +320,20 @@
         }
 
         .book-preview.continuous {
-            max-width: 850px;
+            max-width: 100%;
             width: 100%;
-            padding: 3.5rem 3rem;
-            border-radius: 4px;
+            padding: 2rem 1.5rem;
+            border-radius: 0;
             min-height: 600px;
             background: var(--bg-primary);
+        }
+
+        @media (min-width: 768px) {
+            .book-preview.continuous {
+                max-width: 850px;
+                padding: 3.5rem 3rem;
+                border-radius: 4px;
+            }
         }
 
         .book-preview.continuous .book-content {
@@ -1010,10 +1022,13 @@
         function changeViewMode(mode) {
             viewMode = mode;
             previewViewport.innerHTML = '';
+            const previewContainer = document.querySelector('.preview-container');
 
             if (mode === 'page') {
+                previewContainer.classList.add('page-mode');
                 renderAllPages();
             } else {
+                previewContainer.classList.remove('page-mode');
                 const preview = document.createElement('div');
                 preview.className = 'book-preview continuous';
                 preview.innerHTML = `<div class="book-content">${currentHtml}</div>`;
@@ -1031,33 +1046,45 @@
         }
 
         function renderAllPages() {
-            // Pure character-based pagination for maximum pages
+            // Aggressive character-based pagination - split long elements
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = currentHtml;
             const elements = Array.from(tempDiv.children);
             const sections = [];
-            let currentSection = [];
+            let currentSection = '';
             let charCount = 0;
-            const charsPerPage = 800; // Smaller chunks = more pages
+            const charsPerPage = 400; // Much smaller for more pages
 
             elements.forEach(el => {
                 const elementText = el.textContent || '';
                 const elementChars = elementText.length;
+                const elementHtml = el.outerHTML;
 
-                // Start new page only when we exceed character limit
-                if (charCount > charsPerPage && currentSection.length > 0) {
-                    sections.push(currentSection.map(e => e.outerHTML).join(''));
-                    currentSection = [el];
+                // If single element is very long, it needs to be on its own page(s)
+                if (elementChars > charsPerPage) {
+                    // Push current section if it has content
+                    if (currentSection) {
+                        sections.push(currentSection);
+                        currentSection = '';
+                        charCount = 0;
+                    }
+                    // Add the long element as its own page
+                    sections.push(elementHtml);
+                } else if (charCount + elementChars > charsPerPage && currentSection) {
+                    // Start new page
+                    sections.push(currentSection);
+                    currentSection = elementHtml;
                     charCount = elementChars;
                 } else {
-                    currentSection.push(el);
+                    // Add to current page
+                    currentSection += elementHtml;
                     charCount += elementChars;
                 }
             });
 
             // Push remaining content
-            if (currentSection.length > 0) {
-                sections.push(currentSection.map(e => e.outerHTML).join(''));
+            if (currentSection) {
+                sections.push(currentSection);
             }
 
             // If no sections, use full content
@@ -1067,6 +1094,9 @@
 
             // Render all pages
             previewViewport.innerHTML = '';
+            const previewContainer = document.querySelector('.preview-container');
+            previewContainer.classList.add('page-mode');
+
             sections.forEach((section, idx) => {
                 const page = document.createElement('div');
                 page.className = 'book-page';
