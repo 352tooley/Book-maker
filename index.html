@@ -299,15 +299,13 @@
         .preview-viewport {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 2rem;
-        }
-
-        .preview-viewport.page-mode {
+            flex-direction: column;
             align-items: center;
-            padding: 0;
+            padding: 2rem;
+            gap: 2rem;
+            scroll-behavior: smooth;
         }
 
         .book-preview {
@@ -324,17 +322,19 @@
             min-height: 600px;
         }
 
-        .book-preview.page {
+        .book-page {
             width: var(--book-width);
             height: var(--book-height);
             padding: 0.75in 1in;
-            overflow: hidden;
+            background: var(--bg-primary);
             position: relative;
             box-shadow: 0 0 0 1px rgba(0,0,0,0.1), 0 20px 60px rgba(0,0,0,0.4);
+            margin-bottom: 2rem;
+            flex-shrink: 0;
         }
 
         .page-content {
-            height: 100%;
+            height: calc(100% - 0.75in);
             overflow: hidden;
         }
 
@@ -701,11 +701,8 @@
         <!-- Preview -->
         <div class="preview-container">
             <div class="preview-controls" id="previewControls" style="display: none;">
-                <button onclick="changeViewMode('continuous')">📄 Continuous</button>
-                <button onclick="changeViewMode('page')">📖 Page View</button>
-                <button onclick="previousPage()" id="prevBtn" style="display: none;">← Prev</button>
-                <span class="page-number" id="pageNumber" style="display: none;">Page 1</span>
-                <button onclick="nextPage()" id="nextBtn" style="display: none;">Next →</button>
+                <button onclick="changeViewMode('continuous')">📄 Continuous Scroll</button>
+                <button onclick="changeViewMode('page')">📖 Book Pages</button>
             </div>
 
             <div class="preview-viewport" id="previewViewport">
@@ -882,7 +879,7 @@
 
         // Process file
         async function processFile(file) {
-            bookPreview.innerHTML = `<div class="loading"><div class="spinner"></div><div class="loading-text">Processing manuscript...</div></div>`;
+            previewViewport.innerHTML = '<div class="book-preview continuous"><div class="loading"><div class="spinner"></div><div class="loading-text">Processing manuscript...</div></div></div>';
 
             try {
                 const arrayBuffer = await file.arrayBuffer();
@@ -921,49 +918,57 @@
                 enhanceBtn.disabled = !apiKeyInput.value.trim();
 
             } catch (error) {
-                bookPreview.innerHTML = `<div class="instructions"><h2 style="color: var(--error);">Error</h2><p>${error.message}</p></div>`;
+                previewViewport.innerHTML = `<div class="book-preview continuous"><div class="instructions"><h2 style="color: var(--error);">Error</h2><p>${error.message}</p></div></div>`;
             }
         }
 
         function renderBook(html) {
-            bookPreview.innerHTML = `<div class="book-content">${html}</div>`;
-            const firstH1 = bookPreview.querySelector('h1');
+            // Clear viewport and render in continuous mode
+            previewViewport.innerHTML = '';
+            const preview = document.createElement('div');
+            preview.className = 'book-preview continuous';
+            preview.innerHTML = `<div class="book-content">${html}</div>`;
+            previewViewport.appendChild(preview);
+
+            // Add drop cap
+            const firstH1 = preview.querySelector('h1');
             if (firstH1 && firstH1.nextElementSibling && firstH1.nextElementSibling.tagName === 'P') {
                 const firstP = firstH1.nextElementSibling;
                 if (firstP.textContent.trim().length > 50) {
                     firstP.classList.add('drop-cap');
                 }
             }
+
+            // Scroll to top
+            previewViewport.scrollTop = 0;
         }
 
         // View Mode
         function changeViewMode(mode) {
             viewMode = mode;
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            const pageNumber = document.getElementById('pageNumber');
+            previewViewport.innerHTML = '';
 
             if (mode === 'page') {
-                bookPreview.classList.remove('continuous');
-                bookPreview.classList.add('page');
-                previewViewport.classList.add('page-mode');
-                prevBtn.style.display = 'inline-block';
-                nextBtn.style.display = 'inline-block';
-                pageNumber.style.display = 'inline-block';
-                renderPage(1);
+                renderAllPages();
             } else {
-                bookPreview.classList.remove('page');
-                bookPreview.classList.add('continuous');
-                previewViewport.classList.remove('page-mode');
-                prevBtn.style.display = 'none';
-                nextBtn.style.display = 'none';
-                pageNumber.style.display = 'none';
-                renderBook(currentHtml);
+                const preview = document.createElement('div');
+                preview.className = 'book-preview continuous';
+                preview.innerHTML = `<div class="book-content">${currentHtml}</div>`;
+                previewViewport.appendChild(preview);
+
+                // Re-add drop cap
+                const firstH1 = preview.querySelector('h1');
+                if (firstH1 && firstH1.nextElementSibling && firstH1.nextElementSibling.tagName === 'P') {
+                    const firstP = firstH1.nextElementSibling;
+                    if (firstP.textContent.trim().length > 50) {
+                        firstP.classList.add('drop-cap');
+                    }
+                }
             }
         }
 
-        function renderPage(pageNum) {
-            // Simplified pagination - split by h1/h2 headings
+        function renderAllPages() {
+            // Split content into pages by headings
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = currentHtml;
             const sections = [];
@@ -979,24 +984,30 @@
             });
             if (currentSection) sections.push(currentSection);
 
-            totalPages = sections.length || 1;
-            currentPage = Math.min(Math.max(1, pageNum), totalPages);
+            // Render all pages
+            previewViewport.innerHTML = '';
+            sections.forEach((section, idx) => {
+                const page = document.createElement('div');
+                page.className = 'book-page';
+                page.innerHTML = `
+                    <div class="page-content">
+                        <div class="book-content">${section}</div>
+                    </div>
+                    <div class="page-footer">${idx + 1}</div>
+                `;
+                previewViewport.appendChild(page);
+            });
 
-            bookPreview.innerHTML = `
-                <div class="page-content">
-                    <div class="book-content">${sections[currentPage - 1] || currentHtml}</div>
-                </div>
-                <div class="page-footer">${currentPage}</div>
-            `;
-            document.getElementById('pageNumber').textContent = `Page ${currentPage} of ${totalPages}`;
+            // Scroll to top
+            previewViewport.scrollTop = 0;
         }
 
         function previousPage() {
-            if (currentPage > 1) renderPage(currentPage - 1);
+            // Not used anymore - kept for compatibility
         }
 
         function nextPage() {
-            if (currentPage < totalPages) renderPage(currentPage + 1);
+            // Not used anymore - kept for compatibility
         }
 
         // Clean Up Text
