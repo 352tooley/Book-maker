@@ -41,6 +41,7 @@
             --body-font: Georgia, 'Times New Roman', serif;
             --code-font: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
             --sidebar-width: 280px;
+            --right-sidebar-width: 320px;
         }
 
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@300;400;700&display=swap');
@@ -345,7 +346,7 @@
         /* ===== EDITOR VIEW ===== */
         .editor-view {
             display: grid;
-            grid-template-columns: var(--sidebar-width) 1fr;
+            grid-template-columns: var(--sidebar-width) 1fr var(--right-sidebar-width);
             height: calc(100vh - 64px);
         }
 
@@ -631,6 +632,204 @@
             background: var(--bg-secondary);
         }
 
+        /* ===== RIGHT SIDEBAR (TOOLS) ===== */
+        .tools-sidebar {
+            background: var(--bg-primary);
+            border-left: 2px solid var(--border-color);
+            overflow-y: auto;
+            padding: 1.5rem 0;
+        }
+
+        .tools-panel {
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tools-panel:last-child {
+            border-bottom: none;
+        }
+
+        .tool-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .tool-header:hover {
+            background: var(--bg-secondary);
+        }
+
+        .tool-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .tool-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .tool-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .tool-expand-icon {
+            font-size: 0.8rem;
+            transition: transform 0.2s;
+            color: var(--text-tertiary);
+        }
+
+        .tool-header.collapsed .tool-expand-icon {
+            transform: rotate(-90deg);
+        }
+
+        .tool-content {
+            padding: 0 1.5rem 1rem 1.5rem;
+            display: block;
+        }
+
+        .tool-content.collapsed {
+            display: none;
+        }
+
+        /* Find & Replace Tool */
+        .find-replace-input {
+            width: 100%;
+            padding: 0.6rem;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-family: var(--heading-font);
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .find-replace-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .tool-btn {
+            width: 100%;
+            padding: 0.6rem;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-family: var(--heading-font);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 0.5rem;
+        }
+
+        .tool-btn:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-1px);
+        }
+
+        .tool-btn.secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .tool-btn.secondary:hover {
+            background: var(--border-color);
+        }
+
+        /* Goals Panel */
+        .goal-item {
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            margin-bottom: 0.75rem;
+        }
+
+        .goal-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .goal-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .goal-progress {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .goal-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        /* Pinned Notes */
+        .note-item {
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid var(--accent-primary);
+        }
+
+        .note-text {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .note-btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--heading-font);
+            font-weight: 500;
+        }
+
+        .note-btn:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .empty-tool-state {
+            text-align: center;
+            padding: 1.5rem 0;
+            color: var(--text-tertiary);
+            font-size: 0.85rem;
+        }
+
         /* Modal */
         .modal {
             display: none;
@@ -771,12 +970,26 @@
         }
 
         /* Responsive */
+        @media (max-width: 1200px) {
+            .editor-view {
+                grid-template-columns: var(--sidebar-width) 1fr;
+            }
+
+            .tools-sidebar {
+                display: none;
+            }
+        }
+
         @media (max-width: 768px) {
             .editor-view {
                 grid-template-columns: 1fr;
             }
 
             .manuscript-sidebar {
+                display: none;
+            }
+
+            .tools-sidebar {
                 display: none;
             }
 
@@ -871,6 +1084,11 @@
                 <input type="text" class="section-title-input" id="sectionTitleInput" placeholder="Title">
                 <div class="editor-content" contenteditable="true" id="editorContent"></div>
             </div>
+            <div class="tools-sidebar">
+                <div id="toolsPanels">
+                    <!-- Tools panels will be rendered here -->
+                </div>
+            </div>
         </div>
     </div>
 
@@ -961,7 +1179,14 @@
                 front: false,
                 body: false,
                 back: false
-            }
+            },
+            toolPanelState: {
+                findReplace: true,
+                goals: true,
+                notes: false,
+                timeline: false
+            },
+            pinnedNotes: []
         };
 
         // Initialize App
@@ -1128,6 +1353,7 @@
             // Switch to editor view
             switchView('editor');
             renderManuscriptStructure();
+            renderToolsPanels();
             loadCurrentSection();
             saveState();
         }
@@ -1460,6 +1686,200 @@
             saveState();
         }
 
+        // ===== RIGHT SIDEBAR TOOLS =====
+
+        // Render Tools Panels
+        function renderToolsPanels() {
+            const book = getCurrentBook();
+            if (!book) return;
+
+            const section = getCurrentSection();
+            const wordCount = section && appState.currentSectionType === 'chapter' ? section.wordCount : 0;
+            const totalWords = book.wordCount || 0;
+
+            const container = document.getElementById('toolsPanels');
+            let html = '';
+
+            // Find & Replace Panel
+            html += `
+                <div class="tools-panel">
+                    <div class="tool-header ${appState.toolPanelState.findReplace ? '' : 'collapsed'}"
+                         onclick="toggleToolPanel('findReplace')">
+                        <div class="tool-header-left">
+                            <span class="tool-icon">🔍</span>
+                            <span class="tool-title">Find & Replace</span>
+                        </div>
+                        <span class="tool-expand-icon">▼</span>
+                    </div>
+                    <div class="tool-content ${appState.toolPanelState.findReplace ? '' : 'collapsed'}">
+                        <input type="text" id="findInput" class="find-replace-input" placeholder="Find...">
+                        <input type="text" id="replaceInput" class="find-replace-input" placeholder="Replace with...">
+                        <button class="tool-btn" onclick="findText()">Find Next</button>
+                        <button class="tool-btn secondary" onclick="replaceText()">Replace</button>
+                        <button class="tool-btn secondary" onclick="replaceAllText()">Replace All</button>
+                    </div>
+                </div>
+            `;
+
+            // Goals & Insights Panel
+            const goalWordCount = 50000;
+            const progress = Math.min((totalWords / goalWordCount) * 100, 100);
+
+            html += `
+                <div class="tools-panel">
+                    <div class="tool-header ${appState.toolPanelState.goals ? '' : 'collapsed'}"
+                         onclick="toggleToolPanel('goals')">
+                        <div class="tool-header-left">
+                            <span class="tool-icon">🎯</span>
+                            <span class="tool-title">Goals & Insights</span>
+                        </div>
+                        <span class="tool-expand-icon">▼</span>
+                    </div>
+                    <div class="tool-content ${appState.toolPanelState.goals ? '' : 'collapsed'}">
+                        <div class="goal-item">
+                            <div class="goal-label">Current Chapter</div>
+                            <div class="goal-value">${wordCount.toLocaleString()} words</div>
+                        </div>
+                        <div class="goal-item">
+                            <div class="goal-label">Total Progress</div>
+                            <div class="goal-value">${totalWords.toLocaleString()} / ${goalWordCount.toLocaleString()}</div>
+                            <div class="goal-progress">
+                                <div class="goal-progress-bar" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+                        <div class="goal-item">
+                            <div class="goal-label">Chapters Written</div>
+                            <div class="goal-value">${book.chapters.length}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Pinned Notes Panel
+            html += `
+                <div class="tools-panel">
+                    <div class="tool-header ${appState.toolPanelState.notes ? '' : 'collapsed'}"
+                         onclick="toggleToolPanel('notes')">
+                        <div class="tool-header-left">
+                            <span class="tool-icon">📌</span>
+                            <span class="tool-title">Pinned Notes</span>
+                        </div>
+                        <span class="tool-expand-icon">▼</span>
+                    </div>
+                    <div class="tool-content ${appState.toolPanelState.notes ? '' : 'collapsed'}">
+                        ${appState.pinnedNotes.length === 0 ? `
+                            <div class="empty-tool-state">No pinned notes yet</div>
+                        ` : appState.pinnedNotes.map((note, index) => `
+                            <div class="note-item">
+                                <div class="note-text">${note}</div>
+                                <div class="note-actions">
+                                    <button class="note-btn" onclick="deletePinnedNote(${index})">Delete</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                        <button class="tool-btn" onclick="addPinnedNotePrompt()">+ Add Note</button>
+                    </div>
+                </div>
+            `;
+
+            // Writing Timeline Panel
+            html += `
+                <div class="tools-panel">
+                    <div class="tool-header ${appState.toolPanelState.timeline ? '' : 'collapsed'}"
+                         onclick="toggleToolPanel('timeline')">
+                        <div class="tool-header-left">
+                            <span class="tool-icon">📊</span>
+                            <span class="tool-title">Writing Timeline</span>
+                        </div>
+                        <span class="tool-expand-icon">▼</span>
+                    </div>
+                    <div class="tool-content ${appState.toolPanelState.timeline ? '' : 'collapsed'}">
+                        <div class="goal-item">
+                            <div class="goal-label">Started</div>
+                            <div class="goal-value" style="font-size: 0.9rem;">${new Date(book.createdAt).toLocaleDateString()}</div>
+                        </div>
+                        <div class="goal-item">
+                            <div class="goal-label">Last Updated</div>
+                            <div class="goal-value" style="font-size: 0.9rem;">${new Date(book.updatedAt).toLocaleDateString()}</div>
+                        </div>
+                        <div class="empty-tool-state">Detailed timeline coming soon</div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Toggle Tool Panel
+        function toggleToolPanel(panelName) {
+            appState.toolPanelState[panelName] = !appState.toolPanelState[panelName];
+            renderToolsPanels();
+            saveState();
+        }
+
+        // Find Text
+        function findText() {
+            const findValue = document.getElementById('findInput').value;
+            if (!findValue) return;
+
+            const editor = document.getElementById('editorContent');
+            window.find(findValue, false, false, true);
+        }
+
+        // Replace Text
+        function replaceText() {
+            const findValue = document.getElementById('findInput').value;
+            const replaceValue = document.getElementById('replaceInput').value;
+            if (!findValue) return;
+
+            const editor = document.getElementById('editorContent');
+            const selection = window.getSelection();
+
+            if (selection.toString().toLowerCase() === findValue.toLowerCase()) {
+                document.execCommand('insertText', false, replaceValue);
+                saveCurrentSection();
+                saveState();
+            }
+
+            // Find next occurrence
+            window.find(findValue, false, false, true);
+        }
+
+        // Replace All Text
+        function replaceAllText() {
+            const findValue = document.getElementById('findInput').value;
+            const replaceValue = document.getElementById('replaceInput').value;
+            if (!findValue) return;
+
+            const editor = document.getElementById('editorContent');
+            const content = editor.innerHTML;
+            const regex = new RegExp(findValue, 'gi');
+            editor.innerHTML = content.replace(regex, replaceValue);
+
+            saveCurrentSection();
+            saveState();
+            renderToolsPanels();
+        }
+
+        // Add Pinned Note
+        function addPinnedNotePrompt() {
+            const note = prompt('Enter your note:');
+            if (note && note.trim()) {
+                appState.pinnedNotes.push(note.trim());
+                renderToolsPanels();
+                saveState();
+            }
+        }
+
+        // Delete Pinned Note
+        function deletePinnedNote(index) {
+            if (confirm('Delete this note?')) {
+                appState.pinnedNotes.splice(index, 1);
+                renderToolsPanels();
+                saveState();
+            }
+        }
+
         // Auto-save
         let saveTimeout;
         document.addEventListener('DOMContentLoaded', () => {
@@ -1473,6 +1893,7 @@
                         saveCurrentSection();
                         saveState();
                         renderManuscriptStructure();
+                        renderToolsPanels();
                     }, 1000);
                 });
             }
