@@ -750,6 +750,12 @@
                     <button id="enhanceBtn" disabled>✨ Publishing Insights</button>
                 </div>
 
+                <div class="sidebar-section" id="customAiSection" style="display: none;">
+                    <h3>🎯 Custom AI Transform</h3>
+                    <textarea id="customPrompt" placeholder="Tell AI what to change... (e.g., 'Make all headings bold and centered', 'Add more descriptive language', 'Format as a technical manual')"></textarea>
+                    <button id="customAiBtn">🪄 Transform Document</button>
+                </div>
+
                 <div class="sidebar-section" id="addContentSection" style="display: none;">
                     <h3>➕ Generate Content</h3>
                     <textarea id="contentPrompt" placeholder="Describe what to add..."></textarea>
@@ -834,6 +840,8 @@
         const addContentSection = document.getElementById('addContentSection');
         const exportSection = document.getElementById('exportSection');
         const toggleRight = document.getElementById('toggleRight');
+        const customAiSection = document.getElementById('customAiSection');
+        const customAiBtn = document.getElementById('customAiBtn');
 
         // State
         let currentHtml = '';
@@ -919,6 +927,7 @@
             analyzeBtn.disabled = !hasKey || !hasContent;
             enhanceBtn.disabled = !hasKey || !hasContent;
             if (addContentBtn) addContentBtn.disabled = !hasKey || !hasContent;
+            if (customAiBtn) customAiBtn.disabled = !hasKey || !hasContent;
         });
 
         // Button handlers
@@ -926,6 +935,7 @@
         analyzeBtn.addEventListener('click', analyzeFormatting);
         enhanceBtn.addEventListener('click', getPublishingInsights);
         if (addContentBtn) addContentBtn.addEventListener('click', addContentWithAI);
+        if (customAiBtn) customAiBtn.addEventListener('click', customAiTransform);
 
         document.getElementById('downloadHtml').addEventListener('click', () => {
             const blob = new Blob([currentHtml], { type: 'text/html' });
@@ -988,9 +998,11 @@
                 previewControls.style.display = 'flex';
                 addContentSection.style.display = 'block';
                 exportSection.style.display = 'block';
+                customAiSection.style.display = 'block';
                 cleanupBtn.disabled = !apiKeyInput.value.trim();
                 analyzeBtn.disabled = !apiKeyInput.value.trim();
                 enhanceBtn.disabled = !apiKeyInput.value.trim();
+                if (customAiBtn) customAiBtn.disabled = !apiKeyInput.value.trim();
 
             } catch (error) {
                 previewViewport.innerHTML = `<div class="book-preview continuous"><div class="instructions"><h2 style="color: var(--error);">Error</h2><p>${error.message}</p></div></div>`;
@@ -1377,6 +1389,70 @@
         function showRightSidebar() {
             rightSidebar.classList.remove('collapsed');
             toggleRight.style.display = 'block';
+        }
+
+        // Custom AI Transform
+        async function customAiTransform() {
+            const apiKey = apiKeyInput.value.trim();
+            const prompt = document.getElementById('customPrompt').value.trim();
+
+            if (!apiKey || !prompt || !currentHtml) {
+                alert('Enter API key and describe what you want to change');
+                return;
+            }
+
+            customAiBtn.disabled = true;
+            customAiBtn.textContent = '🪄 Transforming...';
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            {
+                                role: 'system',
+                                content: 'You are a professional document formatter and editor. Take the user\'s HTML document and modify it according to their instructions. Return ONLY valid HTML with proper tags (h1, h2, h3, p, pre, code, blockquote, etc.). Maintain document structure unless instructed otherwise. Do not add markdown code fences.'
+                            },
+                            {
+                                role: 'user',
+                                content: `Here is the document:\n\n${currentHtml.substring(0, 12000)}\n\n---\n\nUser's instruction: ${prompt}\n\nReturn the modified HTML:`
+                            }
+                        ],
+                        model: 'gpt-4o-mini',
+                        temperature: 0.5
+                    })
+                });
+
+                if (!response.ok) throw new Error(`API Error ${response.status}`);
+
+                const data = await response.json();
+                let transformed = data.choices[0].message.content;
+
+                // Clean up any markdown code fences
+                transformed = transformed.replace(/```html\n?/g, '').replace(/```\n?/g, '');
+
+                currentHtml = transformed;
+
+                // Re-render in current view mode
+                if (viewMode === 'page') {
+                    renderAllPages();
+                } else {
+                    renderBook(transformed);
+                }
+
+                document.getElementById('customPrompt').value = '';
+                alert('✅ Document transformed! Review the changes.');
+
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                customAiBtn.disabled = false;
+                customAiBtn.textContent = '🪄 Transform Document';
+            }
         }
 
         function escapeJs(text) {
