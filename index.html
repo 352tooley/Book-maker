@@ -968,21 +968,41 @@
         }
 
         function renderAllPages() {
-            // Split content into pages by headings
+            // Split content into smaller chunks for more pages
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = currentHtml;
+            const elements = Array.from(tempDiv.children);
             const sections = [];
-            let currentSection = '';
+            let currentSection = [];
+            let charCount = 0;
+            const charsPerPage = 2500; // Approximate characters per page
 
-            Array.from(tempDiv.children).forEach(el => {
-                if (el.tagName === 'H1' || el.tagName === 'H2') {
-                    if (currentSection) sections.push(currentSection);
-                    currentSection = el.outerHTML;
+            elements.forEach(el => {
+                const elementText = el.textContent || '';
+                const elementChars = elementText.length;
+
+                // Start new page on H1, or if we've reached character limit
+                if (el.tagName === 'H1' || (charCount > charsPerPage && currentSection.length > 0)) {
+                    if (currentSection.length > 0) {
+                        sections.push(currentSection.map(e => e.outerHTML).join(''));
+                    }
+                    currentSection = [el];
+                    charCount = elementChars;
                 } else {
-                    currentSection += el.outerHTML;
+                    currentSection.push(el);
+                    charCount += elementChars;
                 }
             });
-            if (currentSection) sections.push(currentSection);
+
+            // Push remaining content
+            if (currentSection.length > 0) {
+                sections.push(currentSection.map(e => e.outerHTML).join(''));
+            }
+
+            // If no sections, use full content
+            if (sections.length === 0) {
+                sections.push(currentHtml);
+            }
 
             // Render all pages
             previewViewport.innerHTML = '';
