@@ -741,7 +741,7 @@
                     <option value="print">Print Master</option>
                 </select>
                 <div class="ai-controls">
-                    <input type="password" id="apiKey" placeholder="🤖 Grok API Key (optional)">
+                    <input type="password" id="apiKey" placeholder="🤖 OpenAI API Key (optional)">
                     <button id="enhanceBtn" disabled>✨ Enhance with AI</button>
                 </div>
             </div>
@@ -764,14 +764,14 @@
                         <p>
                             <strong>Step 1:</strong> Upload your .docx manuscript
                             <div class="arrow">↓</div>
-                            <strong>Step 2:</strong> (Optional) Add your Grok API key & click "Enhance with AI"
+                            <strong>Step 2:</strong> (Optional) Add your OpenAI API key & click "Enhance with AI"
                             <div class="arrow">↓</div>
                             <strong>Step 3:</strong> Choose your perfect theme
                             <div class="arrow">↓</div>
                             <strong>Step 4:</strong> Export as HTML, Markdown, or Print to PDF
                         </p>
                         <p style="margin-top: 2rem; font-size: 0.9rem; color: var(--text-tertiary);">
-                            Get your Grok API key at <a href="https://x.ai/api" target="_blank" style="color: var(--accent-primary);">x.ai/api</a>
+                            Get your OpenAI API key at <a href="https://platform.openai.com/api-keys" target="_blank" style="color: var(--accent-primary);">platform.openai.com/api-keys</a>
                         </p>
                     </div>
                 </div>
@@ -965,7 +965,7 @@ Respond in JSON format:
 }`;
 
             try {
-                const response = await fetch('https://api.x.ai/v1/chat/completions', {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -982,8 +982,8 @@ Respond in JSON format:
                                 content: prompt
                             }
                         ],
-                        model: 'grok-2-1212',
-                        stream: false,
+                        model: 'gpt-4o-mini',
+                        response_format: { type: 'json_object' },
                         temperature: 0.7
                     })
                 });
@@ -1008,8 +1008,8 @@ Respond in JSON format:
                 mainContent.classList.add('with-sidebar');
 
             } catch (error) {
-                alert(`AI Enhancement Error: ${error.message}\n\nPlease check your API key and try again.`);
-                console.error('Grok API Error:', error);
+                alert(`AI Enhancement Error: ${error.message}\n\nPlease check your OpenAI API key and try again.`);
+                console.error('OpenAI API Error:', error);
             } finally {
                 enhanceBtn.disabled = false;
                 enhanceBtn.textContent = '✨ Enhance with AI';
