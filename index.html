@@ -353,13 +353,14 @@
             background: var(--bg-primary);
             border-right: 2px solid var(--border-color);
             overflow-y: auto;
-            padding: 1.5rem;
+            padding: 1.5rem 0;
         }
 
         .sidebar-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 0 1.5rem;
             margin-bottom: 1.5rem;
         }
 
@@ -371,95 +372,221 @@
             color: var(--text-secondary);
         }
 
-        .add-section-btn {
-            width: 28px;
-            height: 28px;
+        /* Manuscript Sections */
+        .manuscript-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .section-header:hover {
+            background: var(--bg-secondary);
+        }
+
+        .section-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .section-expand-icon {
+            font-size: 0.8rem;
+            transition: transform 0.2s;
+            color: var(--text-tertiary);
+        }
+
+        .section-header.collapsed .section-expand-icon {
+            transform: rotate(-90deg);
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        .section-add-btn {
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             background: var(--accent-primary);
             color: white;
             border: none;
             cursor: pointer;
-            font-size: 1.1rem;
+            font-size: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
+            opacity: 0;
         }
 
-        .add-section-btn:hover {
+        .section-header:hover .section-add-btn {
+            opacity: 1;
+        }
+
+        .section-add-btn:hover {
             background: var(--accent-secondary);
             transform: scale(1.1);
         }
 
-        .chapter-list {
-            list-style: none;
+        .section-content {
+            padding: 0.5rem 0;
         }
 
-        .chapter-item {
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            border-radius: 6px;
+        .section-content.collapsed {
+            display: none;
+        }
+
+        .section-item {
+            padding: 0.65rem 1.5rem 0.65rem 2.5rem;
             cursor: pointer;
             transition: all 0.2s;
-            background: var(--bg-secondary);
             position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
         }
 
-        .chapter-item:hover {
-            background: var(--bg-tertiary);
+        .section-item:hover {
+            background: var(--bg-secondary);
         }
 
-        .chapter-item.active {
+        .section-item.active {
             background: var(--accent-primary);
             color: white;
         }
 
-        .chapter-title-text {
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .chapter-meta-text {
-            font-size: 0.75rem;
-            color: var(--text-tertiary);
-        }
-
-        .chapter-item.active .chapter-meta-text {
-            color: rgba(255,255,255,0.8);
-        }
-
-        .chapter-actions {
-            position: absolute;
-            right: 0.5rem;
-            top: 50%;
-            transform: translateY(-50%);
-            display: none;
-            gap: 0.25rem;
-        }
-
-        .chapter-item:hover .chapter-actions {
+        .section-item-left {
             display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 0;
         }
 
-        .chapter-delete-btn {
-            width: 24px;
-            height: 24px;
+        .section-item-icon {
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .section-item-title {
+            font-weight: 500;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .section-item-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .section-item:hover .section-item-right {
+            opacity: 1;
+        }
+
+        .section-item.active .section-item-right {
+            opacity: 1;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border-color);
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--accent-primary);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(16px);
+        }
+
+        .section-item.disabled .section-item-title {
+            opacity: 0.5;
+            text-decoration: line-through;
+        }
+
+        .item-action-btn {
+            width: 22px;
+            height: 22px;
             border-radius: 4px;
-            background: rgba(239, 68, 68, 0.9);
-            color: white;
+            background: rgba(0, 0, 0, 0.1);
             border: none;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
         }
 
-        .chapter-delete-btn:hover {
-            background: var(--error);
+        .section-item.active .item-action-btn {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .item-action-btn:hover {
+            background: rgba(0, 0, 0, 0.2);
             transform: scale(1.1);
+        }
+
+        .section-item.active .item-action-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .item-action-btn.delete:hover {
+            background: var(--error);
+            color: white;
         }
 
         .editor-container {
@@ -471,7 +598,7 @@
             width: 100%;
         }
 
-        .chapter-title-input {
+        .section-title-input {
             font-size: 2.5rem;
             font-weight: 800;
             border: none;
@@ -483,7 +610,7 @@
             font-family: var(--heading-font);
         }
 
-        .chapter-title-input:focus {
+        .section-title-input:focus {
             background: var(--bg-secondary);
             border-radius: 6px;
         }
@@ -735,14 +862,13 @@
             <div class="manuscript-sidebar">
                 <div class="sidebar-header">
                     <h3 class="sidebar-title">Manuscript</h3>
-                    <button class="add-section-btn" onclick="openAddChapterModal()">+</button>
                 </div>
-                <ul class="chapter-list" id="chapterList">
-                    <!-- Chapters will be added here -->
-                </ul>
+                <div id="manuscriptStructure">
+                    <!-- Will be rendered by JavaScript -->
+                </div>
             </div>
             <div class="editor-container">
-                <input type="text" class="chapter-title-input" id="chapterTitleInput" placeholder="Chapter Title">
+                <input type="text" class="section-title-input" id="sectionTitleInput" placeholder="Title">
                 <div class="editor-content" contenteditable="true" id="editorContent"></div>
             </div>
         </div>
@@ -808,11 +934,34 @@
     </div>
 
     <script>
+        // Default Front Matter and Back Matter templates
+        const DEFAULT_FRONT_MATTER = [
+            { id: 'copyright', title: 'Copyright', icon: '📄', enabled: true, content: '', deletable: false },
+            { id: 'dedication', title: 'Dedication', icon: '📄', enabled: false, content: '', deletable: false },
+            { id: 'epigraph', title: 'Epigraph', icon: '📄', enabled: false, content: '', deletable: false },
+            { id: 'toc', title: 'Table of Contents', icon: '📄', enabled: false, content: '', deletable: false },
+            { id: 'foreword', title: 'Foreword', icon: '📄', enabled: false, content: '', deletable: false },
+            { id: 'preface', title: 'Preface', icon: '📄', enabled: false, content: '', deletable: false },
+            { id: 'acknowledgments', title: 'Acknowledgments', icon: '📄', enabled: false, content: '', deletable: false }
+        ];
+
+        const DEFAULT_BACK_MATTER = [
+            { id: 'notes', title: 'Notes', icon: '📄', enabled: false, content: '', deletable: false },
+            { id: 'about', title: 'About the Author', icon: '📄', enabled: false, content: '', deletable: false },
+            { id: 'also-by', title: 'Also by Author', icon: '📄', enabled: false, content: '', deletable: false }
+        ];
+
         // Application State
         let appState = {
             books: [],
             currentBookId: null,
-            currentChapterId: null
+            currentSectionType: null, // 'front', 'chapter', 'back'
+            currentSectionId: null,
+            sectionCollapseState: {
+                front: false,
+                body: false,
+                back: false
+            }
         };
 
         // Initialize App
@@ -826,7 +975,22 @@
         function loadState() {
             const saved = localStorage.getItem('reedsyStudioBooks');
             if (saved) {
-                appState = JSON.parse(saved);
+                const loaded = JSON.parse(saved);
+                appState = { ...appState, ...loaded };
+
+                // Migrate old books without manuscript structure
+                appState.books = appState.books.map(book => {
+                    if (!book.frontMatter) {
+                        book.frontMatter = JSON.parse(JSON.stringify(DEFAULT_FRONT_MATTER));
+                    }
+                    if (!book.backMatter) {
+                        book.backMatter = JSON.parse(JSON.stringify(DEFAULT_BACK_MATTER));
+                    }
+                    if (!book.chapters) {
+                        book.chapters = [];
+                    }
+                    return book;
+                });
             }
         }
 
@@ -867,7 +1031,9 @@
                 genre,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
+                frontMatter: JSON.parse(JSON.stringify(DEFAULT_FRONT_MATTER)),
                 chapters: [],
+                backMatter: JSON.parse(JSON.stringify(DEFAULT_BACK_MATTER)),
                 wordCount: 0
             };
 
@@ -948,14 +1114,21 @@
             appState.currentBookId = bookId;
             const book = getCurrentBook();
 
-            if (book && book.chapters.length > 0) {
-                appState.currentChapterId = book.chapters[0].id;
+            if (book) {
+                // Default to first chapter
+                if (book.chapters.length > 0) {
+                    appState.currentSectionType = 'chapter';
+                    appState.currentSectionId = book.chapters[0].id;
+                } else {
+                    appState.currentSectionType = 'front';
+                    appState.currentSectionId = book.frontMatter[0].id;
+                }
             }
 
             // Switch to editor view
             switchView('editor');
-            renderChapters();
-            loadCurrentChapter();
+            renderManuscriptStructure();
+            loadCurrentSection();
             saveState();
         }
 
@@ -964,11 +1137,19 @@
             return appState.books.find(b => b.id === appState.currentBookId);
         }
 
-        // Get Current Chapter
-        function getCurrentChapter() {
+        // Get Current Section
+        function getCurrentSection() {
             const book = getCurrentBook();
             if (!book) return null;
-            return book.chapters.find(c => c.id === appState.currentChapterId);
+
+            if (appState.currentSectionType === 'front') {
+                return book.frontMatter.find(s => s.id === appState.currentSectionId);
+            } else if (appState.currentSectionType === 'chapter') {
+                return book.chapters.find(c => c.id === appState.currentSectionId);
+            } else if (appState.currentSectionType === 'back') {
+                return book.backMatter.find(s => s.id === appState.currentSectionId);
+            }
+            return null;
         }
 
         // Switch View
@@ -1003,29 +1184,207 @@
 
         // Go to Bookshelf
         function goToBookshelf() {
+            saveCurrentSection();
             appState.currentBookId = null;
-            appState.currentChapterId = null;
+            appState.currentSectionType = null;
+            appState.currentSectionId = null;
             switchView('bookshelf');
             renderBookshelf();
             saveState();
         }
 
-        // Render Chapters
-        function renderChapters() {
+        // Render Manuscript Structure
+        function renderManuscriptStructure() {
             const book = getCurrentBook();
             if (!book) return;
 
-            const list = document.getElementById('chapterList');
-            list.innerHTML = book.chapters.map(chapter => `
-                <li class="chapter-item ${chapter.id === appState.currentChapterId ? 'active' : ''}"
-                    onclick="switchToChapter(${chapter.id})">
-                    <div class="chapter-title-text">${chapter.title}</div>
-                    <div class="chapter-meta-text">${chapter.wordCount} words</div>
-                    <div class="chapter-actions" onclick="event.stopPropagation()">
-                        <button class="chapter-delete-btn" onclick="deleteChapter(${chapter.id})" title="Delete chapter">🗑️</button>
+            const container = document.getElementById('manuscriptStructure');
+
+            let html = '';
+
+            // FRONT MATTER
+            html += `
+                <div class="manuscript-section">
+                    <div class="section-header ${appState.sectionCollapseState.front ? 'collapsed' : ''}"
+                         onclick="toggleSection('front')">
+                        <div class="section-header-left">
+                            <span class="section-expand-icon">▼</span>
+                            <span class="section-title">Front Matter</span>
+                        </div>
                     </div>
-                </li>
-            `).join('');
+                    <div class="section-content ${appState.sectionCollapseState.front ? 'collapsed' : ''}">
+                        ${book.frontMatter.map(item => `
+                            <div class="section-item ${item.enabled === false ? 'disabled' : ''}
+                                        ${appState.currentSectionType === 'front' && appState.currentSectionId === item.id ? 'active' : ''}"
+                                 onclick="loadSection('front', '${item.id}')">
+                                <div class="section-item-left">
+                                    <span class="section-item-icon">${item.icon}</span>
+                                    <span class="section-item-title">${item.title}</span>
+                                </div>
+                                <div class="section-item-right">
+                                    <label class="toggle-switch" onclick="event.stopPropagation()">
+                                        <input type="checkbox" ${item.enabled !== false ? 'checked' : ''}
+                                               onchange="toggleSectionItem('front', '${item.id}')">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    ${item.deletable !== false ? `<button class="item-action-btn delete" onclick="event.stopPropagation(); deleteMatterSection('front', '${item.id}')" title="Delete">🗑️</button>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            // BODY (CHAPTERS)
+            html += `
+                <div class="manuscript-section">
+                    <div class="section-header ${appState.sectionCollapseState.body ? 'collapsed' : ''}"
+                         onclick="toggleSection('body')">
+                        <div class="section-header-left">
+                            <span class="section-expand-icon">▼</span>
+                            <span class="section-title">Body</span>
+                        </div>
+                        <button class="section-add-btn" onclick="event.stopPropagation(); openAddChapterModal()" title="Add chapter">+</button>
+                    </div>
+                    <div class="section-content ${appState.sectionCollapseState.body ? 'collapsed' : ''}">
+                        ${book.chapters.map(chapter => `
+                            <div class="section-item ${appState.currentSectionType === 'chapter' && appState.currentSectionId === chapter.id ? 'active' : ''}"
+                                 onclick="loadSection('chapter', ${chapter.id})">
+                                <div class="section-item-left">
+                                    <span class="section-item-icon">📖</span>
+                                    <span class="section-item-title">${chapter.title}</span>
+                                </div>
+                                <div class="section-item-right">
+                                    <button class="item-action-btn delete" onclick="event.stopPropagation(); deleteChapter(${chapter.id})" title="Delete">🗑️</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            // BACK MATTER
+            html += `
+                <div class="manuscript-section">
+                    <div class="section-header ${appState.sectionCollapseState.back ? 'collapsed' : ''}"
+                         onclick="toggleSection('back')">
+                        <div class="section-header-left">
+                            <span class="section-expand-icon">▼</span>
+                            <span class="section-title">Back Matter</span>
+                        </div>
+                    </div>
+                    <div class="section-content ${appState.sectionCollapseState.back ? 'collapsed' : ''}">
+                        ${book.backMatter.map(item => `
+                            <div class="section-item ${item.enabled === false ? 'disabled' : ''}
+                                        ${appState.currentSectionType === 'back' && appState.currentSectionId === item.id ? 'active' : ''}"
+                                 onclick="loadSection('back', '${item.id}')">
+                                <div class="section-item-left">
+                                    <span class="section-item-icon">${item.icon}</span>
+                                    <span class="section-item-title">${item.title}</span>
+                                </div>
+                                <div class="section-item-right">
+                                    <label class="toggle-switch" onclick="event.stopPropagation()">
+                                        <input type="checkbox" ${item.enabled !== false ? 'checked' : ''}
+                                               onchange="toggleSectionItem('back', '${item.id}')">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    ${item.deletable !== false ? `<button class="item-action-btn delete" onclick="event.stopPropagation(); deleteMatterSection('back', '${item.id}')" title="Delete">🗑️</button>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Toggle Section Collapse
+        function toggleSection(sectionType) {
+            appState.sectionCollapseState[sectionType] = !appState.sectionCollapseState[sectionType];
+            renderManuscriptStructure();
+            saveState();
+        }
+
+        // Toggle Section Item Enable/Disable
+        function toggleSectionItem(sectionType, itemId) {
+            const book = getCurrentBook();
+            if (!book) return;
+
+            const items = sectionType === 'front' ? book.frontMatter : book.backMatter;
+            const item = items.find(i => i.id === itemId);
+
+            if (item) {
+                item.enabled = !item.enabled;
+                renderManuscriptStructure();
+                saveState();
+            }
+        }
+
+        // Load Section
+        function loadSection(sectionType, sectionId) {
+            saveCurrentSection();
+            appState.currentSectionType = sectionType;
+            appState.currentSectionId = sectionId;
+            loadCurrentSection();
+            renderManuscriptStructure();
+            saveState();
+        }
+
+        // Save Current Section
+        function saveCurrentSection() {
+            const section = getCurrentSection();
+            if (!section) return;
+
+            section.title = document.getElementById('sectionTitleInput').value;
+            section.content = document.getElementById('editorContent').innerHTML;
+
+            if (appState.currentSectionType === 'chapter') {
+                section.wordCount = getWordCount(document.getElementById('editorContent').innerText);
+
+                // Update book word count
+                const book = getCurrentBook();
+                if (book) {
+                    book.wordCount = book.chapters.reduce((sum, ch) => sum + ch.wordCount, 0);
+                    book.updatedAt = new Date().toISOString();
+                }
+            }
+        }
+
+        // Load Current Section
+        function loadCurrentSection() {
+            const section = getCurrentSection();
+            if (!section) return;
+
+            document.getElementById('sectionTitleInput').value = section.title;
+            document.getElementById('editorContent').innerHTML = section.content || '';
+        }
+
+        // Word Count
+        function getWordCount(text) {
+            return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+        }
+
+        // Add Chapter
+        function addChapter() {
+            const book = getCurrentBook();
+            if (!book) return;
+
+            const title = document.getElementById('newChapterTitle').value.trim() || `Chapter ${book.chapters.length + 1}`;
+
+            const chapter = {
+                id: Date.now(),
+                title,
+                content: '',
+                wordCount: 0,
+                createdAt: new Date().toISOString()
+            };
+
+            book.chapters.push(chapter);
+            renderManuscriptStructure();
+            saveState();
+            closeModal('addChapterModal');
+            loadSection('chapter', chapter.id);
         }
 
         // Delete Chapter
@@ -1050,104 +1409,81 @@
             book.chapters = book.chapters.filter(c => c.id !== chapterId);
 
             // If we deleted the current chapter, switch to the first chapter
-            if (appState.currentChapterId === chapterId) {
-                appState.currentChapterId = book.chapters[0].id;
-                loadCurrentChapter();
+            if (appState.currentSectionType === 'chapter' && appState.currentSectionId === chapterId) {
+                if (book.chapters.length > 0) {
+                    appState.currentSectionId = book.chapters[0].id;
+                    loadCurrentSection();
+                }
             }
 
-            renderChapters();
+            renderManuscriptStructure();
             saveState();
         }
 
-        // Add Chapter
-        function addChapter() {
+        // Delete Front/Back Matter Section
+        function deleteMatterSection(sectionType, itemId) {
             const book = getCurrentBook();
             if (!book) return;
 
-            const title = document.getElementById('newChapterTitle').value.trim() || `Chapter ${book.chapters.length + 1}`;
+            const items = sectionType === 'front' ? book.frontMatter : book.backMatter;
+            const item = items.find(i => i.id === itemId);
 
-            const chapter = {
-                id: Date.now(),
-                title,
-                content: '',
-                wordCount: 0,
-                createdAt: new Date().toISOString()
-            };
+            if (!item) return;
 
-            book.chapters.push(chapter);
-            renderChapters();
-            saveState();
-            closeModal('addChapterModal');
-            switchToChapter(chapter.id);
-        }
-
-        // Switch to Chapter
-        function switchToChapter(chapterId) {
-            // Save current chapter
-            saveCurrentChapter();
-
-            // Load new chapter
-            appState.currentChapterId = chapterId;
-            loadCurrentChapter();
-            renderChapters();
-            saveState();
-        }
-
-        // Save Current Chapter
-        function saveCurrentChapter() {
-            const chapter = getCurrentChapter();
-            if (!chapter) return;
-
-            chapter.title = document.getElementById('chapterTitleInput').value;
-            chapter.content = document.getElementById('editorContent').innerHTML;
-            chapter.wordCount = getWordCount(document.getElementById('editorContent').innerText);
-
-            // Update book word count
-            const book = getCurrentBook();
-            if (book) {
-                book.wordCount = book.chapters.reduce((sum, ch) => sum + ch.wordCount, 0);
-                book.updatedAt = new Date().toISOString();
+            if (item.deletable === false) {
+                alert('This section cannot be deleted.');
+                return;
             }
-        }
 
-        // Load Current Chapter
-        function loadCurrentChapter() {
-            const chapter = getCurrentChapter();
-            if (!chapter) return;
+            if (!confirm(`Delete "${item.title}"? This cannot be undone.`)) {
+                return;
+            }
 
-            document.getElementById('chapterTitleInput').value = chapter.title;
-            document.getElementById('editorContent').innerHTML = chapter.content;
-        }
+            // Remove the section
+            if (sectionType === 'front') {
+                book.frontMatter = book.frontMatter.filter(i => i.id !== itemId);
+            } else {
+                book.backMatter = book.backMatter.filter(i => i.id !== itemId);
+            }
 
-        // Word Count
-        function getWordCount(text) {
-            return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+            // If we deleted the current section, switch to another section
+            if (appState.currentSectionType === sectionType && appState.currentSectionId === itemId) {
+                // Switch to first chapter
+                if (book.chapters.length > 0) {
+                    appState.currentSectionType = 'chapter';
+                    appState.currentSectionId = book.chapters[0].id;
+                    loadCurrentSection();
+                }
+            }
+
+            renderManuscriptStructure();
+            saveState();
         }
 
         // Auto-save
         let saveTimeout;
         document.addEventListener('DOMContentLoaded', () => {
             const editorContent = document.getElementById('editorContent');
-            const chapterTitleInput = document.getElementById('chapterTitleInput');
+            const sectionTitleInput = document.getElementById('sectionTitleInput');
 
             if (editorContent) {
                 editorContent.addEventListener('input', () => {
                     clearTimeout(saveTimeout);
                     saveTimeout = setTimeout(() => {
-                        saveCurrentChapter();
+                        saveCurrentSection();
                         saveState();
-                        renderChapters();
+                        renderManuscriptStructure();
                     }, 1000);
                 });
             }
 
-            if (chapterTitleInput) {
-                chapterTitleInput.addEventListener('input', () => {
+            if (sectionTitleInput) {
+                sectionTitleInput.addEventListener('input', () => {
                     clearTimeout(saveTimeout);
                     saveTimeout = setTimeout(() => {
-                        saveCurrentChapter();
+                        saveCurrentSection();
                         saveState();
-                        renderChapters();
+                        renderManuscriptStructure();
                     }, 500);
                 });
             }
@@ -1178,9 +1514,20 @@
 <body>
     <h1>${book.title}</h1>
     <p><em>by ${book.author}</em></p>
+
+    ${book.frontMatter.filter(fm => fm.enabled !== false).map(fm => `
+        <h2>${fm.title}</h2>
+        ${fm.content}
+    `).join('\n')}
+
     ${book.chapters.map(ch => `
         <h2>${ch.title}</h2>
         ${ch.content}
+    `).join('\n')}
+
+    ${book.backMatter.filter(bm => bm.enabled !== false).map(bm => `
+        <h2>${bm.title}</h2>
+        ${bm.content}
     `).join('\n')}
 </body>
 </html>`;
@@ -1196,8 +1543,8 @@
 
         // Prevent data loss
         window.addEventListener('beforeunload', (e) => {
-            if (appState.currentChapterId !== null) {
-                saveCurrentChapter();
+            if (appState.currentSectionId !== null) {
+                saveCurrentSection();
                 saveState();
             }
         });
