@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Manuscript Formatter - Transform Your Book Instantly</title>
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a5568;
+            --accent-primary: #06b6d4;
+            --accent-secondary: #0891b2;
+            --border-color: #e2e8f0;
+            --code-bg: #1e293b;
+            --code-border: #06b6d4;
+            --heading-font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --body-font: Georgia, 'Times New Roman', serif;
+            --code-font: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+        }
+
+        body {
+            font-family: var(--body-font);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            background: var(--bg-primary);
+            border-bottom: 2px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+
+        .upload-zone {
+            flex: 1;
+            min-width: 200px;
+            padding: 1rem 1.5rem;
+            border: 2px dashed var(--accent-primary);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg-secondary);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent-secondary);
+            background: var(--bg-primary);
+            transform: translateY(-2px);
+        }
+
+        .upload-zone.dragover {
+            background: var(--accent-primary);
+            color: white;
+            border-style: solid;
+        }
+
+        .upload-text {
+            font-family: var(--heading-font);
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--accent-primary);
+        }
+
+        .upload-zone.dragover .upload-text {
+            color: white;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        select, button {
+            padding: 0.75rem 1.25rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: var(--heading-font);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        button {
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+        }
+
+        button:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+        }
+
+        select:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .preview-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .book-preview {
+            max-width: 800px;
+            width: 100%;
+            background: var(--bg-primary);
+            padding: 4rem 3rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            border-radius: 4px;
+            min-height: 500px;
+        }
+
+        .instructions {
+            text-align: center;
+            color: var(--text-secondary);
+            font-family: var(--heading-font);
+            padding: 4rem 2rem;
+        }
+
+        .instructions h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .instructions p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .instructions .arrow {
+            font-size: 1.5rem;
+            margin: 1rem 0;
+            color: var(--accent-primary);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 2rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-family: var(--heading-font);
+            font-size: 1.3rem;
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        /* Book Content Styling */
+        .book-content h1 {
+            font-family: var(--heading-font);
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 3rem 0 1.5rem;
+            color: var(--text-primary);
+            line-height: 1.2;
+            page-break-after: avoid;
+        }
+
+        .book-content h2 {
+            font-family: var(--heading-font);
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 2.5rem 0 1.25rem;
+            color: var(--text-primary);
+            page-break-after: avoid;
+        }
+
+        .book-content h3 {
+            font-family: var(--heading-font);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            color: var(--text-primary);
+            page-break-after: avoid;
+        }
+
+        .book-content p {
+            margin-bottom: 1.2rem;
+            text-align: justify;
+            hyphens: auto;
+            orphans: 3;
+            widows: 3;
+        }
+
+        .book-content pre,
+        .book-content code {
+            font-family: var(--code-font);
+            font-size: 0.9rem;
+        }
+
+        .book-content pre {
+            background: var(--code-bg);
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-left: 4px solid var(--code-border);
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 16px rgba(6, 182, 212, 0.2);
+            page-break-inside: avoid;
+        }
+
+        .book-content code {
+            background: var(--code-bg);
+            color: var(--code-border);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .book-content pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        .book-content blockquote {
+            border-left: 4px solid var(--accent-primary);
+            padding-left: 1.5rem;
+            margin: 1.5rem 0;
+            font-style: italic;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            padding: 1rem 1.5rem;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .book-content ul, .book-content ol {
+            margin: 1rem 0 1.5rem 2rem;
+        }
+
+        .book-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .book-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+        }
+
+        .book-content th, .book-content td {
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        .book-content th {
+            background: var(--code-bg);
+            color: white;
+            font-family: var(--heading-font);
+            font-weight: 600;
+        }
+
+        .book-content tr:nth-child(even) {
+            background: var(--bg-secondary);
+        }
+
+        .book-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 2rem auto;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* Theme: Grok */
+        body.theme-grok {
+            --bg-primary: #ffffff;
+            --bg-secondary: #fef3f2;
+            --text-primary: #0a0a0a;
+            --text-secondary: #525252;
+            --accent-primary: #ff6b35;
+            --accent-secondary: #f97316;
+            --border-color: #fed7aa;
+            --code-bg: #0a0a0a;
+            --code-border: #06b6d4;
+        }
+
+        /* Theme: Claude */
+        body.theme-claude {
+            --bg-primary: #fefcf8;
+            --bg-secondary: #f8f5ed;
+            --text-primary: #2d2d2d;
+            --text-secondary: #5a5a5a;
+            --accent-primary: #c17b4a;
+            --accent-secondary: #a86639;
+            --border-color: #e8dcc8;
+            --code-bg: #2d2d2d;
+            --code-border: #c17b4a;
+        }
+
+        /* Theme: Gemini */
+        body.theme-gemini {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f0f9ff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #2563eb;
+            --border-color: #bfdbfe;
+            --code-bg: #1e293b;
+            --code-border: #8b5cf6;
+        }
+
+        /* Theme: Dark Mode */
+        body.theme-dark {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --accent-primary: #06b6d4;
+            --accent-secondary: #0891b2;
+            --border-color: #334155;
+            --code-bg: #020617;
+            --code-border: #06b6d4;
+        }
+
+        body.theme-dark .book-preview {
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        /* Theme: Print Classic */
+        body.theme-print {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f8f8;
+            --text-primary: #000000;
+            --text-secondary: #333333;
+            --accent-primary: #000000;
+            --accent-secondary: #000000;
+            --border-color: #cccccc;
+            --code-bg: #f5f5f5;
+            --code-border: #000000;
+        }
+
+        body.theme-print .book-content pre {
+            box-shadow: none;
+            background: #f5f5f5;
+            color: #000000;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .header {
+                display: none;
+            }
+
+            .preview-container {
+                padding: 0;
+            }
+
+            .book-preview {
+                max-width: 100%;
+                box-shadow: none;
+                padding: 0.75in 1in;
+                margin: 0;
+            }
+
+            .book-content h1 {
+                page-break-before: always;
+                margin-top: 0;
+            }
+
+            .book-content h1:first-child {
+                page-break-before: avoid;
+            }
+
+            @page {
+                size: 6in 9in;
+                margin: 0.75in 1in;
+            }
+
+            .book-content pre,
+            .book-content blockquote,
+            .book-content table,
+            .book-content img {
+                page-break-inside: avoid;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .book-preview {
+                padding: 2rem 1.5rem;
+            }
+
+            .book-content h1 {
+                font-size: 2rem;
+            }
+
+            .book-content h2 {
+                font-size: 1.6rem;
+            }
+
+            .book-content h3 {
+                font-size: 1.3rem;
+            }
+        }
+
+        .brand {
+            font-family: var(--heading-font);
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: var(--accent-primary);
+            white-space: nowrap;
+        }
+
+        .brand-divider {
+            display: none;
+        }
+
+        @media (min-width: 1024px) {
+            .brand-divider {
+                display: block;
+                width: 2px;
+                height: 2rem;
+                background: var(--border-color);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="brand">AI Manuscript Formatter</div>
+            <div class="brand-divider"></div>
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-text">Drag & Drop .docx or Click to Upload</div>
+                <input type="file" id="fileInput" accept=".docx">
+            </div>
+            <select id="themeSelector">
+                <option value="modern-ai">Modern AI</option>
+                <option value="grok">Grok</option>
+                <option value="claude">Claude</option>
+                <option value="gemini">Gemini</option>
+                <option value="dark">Dark Mode</option>
+                <option value="print">Print Classic</option>
+            </select>
+            <button id="downloadBtn" style="display: none;">Download PDF</button>
+        </header>
+
+        <div class="preview-container">
+            <div class="book-preview">
+                <div class="instructions">
+                    <h2>Transform Your Manuscript with AI</h2>
+                    <p>
+                        Upload your .docx file
+                        <div class="arrow">↓</div>
+                        Watch AI turn it into a beautiful book
+                        <div class="arrow">↓</div>
+                        Choose your theme
+                        <div class="arrow">↓</div>
+                        Print to PDF
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const themeSelector = document.getElementById('themeSelector');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const bookPreview = document.querySelector('.book-preview');
+
+        // Upload zone click
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                processFile(e.target.files[0]);
+            }
+        });
+
+        // Drag and drop
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                if (file.name.endsWith('.docx')) {
+                    processFile(file);
+                } else {
+                    alert('Please upload a .docx file');
+                }
+            }
+        });
+
+        // Theme selector
+        themeSelector.addEventListener('change', (e) => {
+            document.body.className = '';
+            if (e.target.value !== 'modern-ai') {
+                document.body.classList.add('theme-' + e.target.value);
+            }
+        });
+
+        // Download PDF
+        downloadBtn.addEventListener('click', () => {
+            window.print();
+        });
+
+        // Process file
+        async function processFile(file) {
+            bookPreview.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <div class="loading-text">AI is transforming your manuscript...</div>
+                </div>
+            `;
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.convertToHtml({arrayBuffer: arrayBuffer}, {
+                    styleMap: [
+                        "p[style-name='Heading 1'] => h1:fresh",
+                        "p[style-name='Heading 2'] => h2:fresh",
+                        "p[style-name='Heading 3'] => h3:fresh",
+                        "p[style-name='Code'] => pre:fresh",
+                        "p[style-name='Quote'] => blockquote:fresh"
+                    ]
+                });
+
+                let html = result.value;
+
+                // Enhance code blocks
+                html = html.replace(/<p>```([\s\S]*?)```<\/p>/g, '<pre><code>$1</code></pre>');
+                html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+                // Clean up extra line breaks
+                html = html.replace(/<p><\/p>/g, '');
+
+                bookPreview.innerHTML = `<div class="book-content">${html}</div>`;
+                downloadBtn.style.display = 'block';
+
+                // Add drop cap to first paragraph after first h1 (optional)
+                const firstH1 = bookPreview.querySelector('h1');
+                if (firstH1 && firstH1.nextElementSibling && firstH1.nextElementSibling.tagName === 'P') {
+                    const firstP = firstH1.nextElementSibling;
+                    const text = firstP.textContent;
+                    if (text.length > 0) {
+                        firstP.innerHTML = `<span style="font-size: 3.5rem; float: left; line-height: 0.9; margin: 0.1rem 0.1rem 0 0; font-weight: bold; font-family: var(--heading-font);">${text[0]}</span>${text.slice(1)}`;
+                    }
+                }
+
+            } catch (error) {
+                bookPreview.innerHTML = `
+                    <div class="instructions">
+                        <h2 style="color: #ef4444;">Error Processing File</h2>
+                        <p>There was an error processing your .docx file. Please make sure it's a valid Word document.</p>
+                        <p style="margin-top: 1rem; font-size: 0.9rem; color: #ef4444;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Prevent accidental navigation
+        window.addEventListener('beforeunload', (e) => {
+            if (downloadBtn.style.display !== 'none') {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>
