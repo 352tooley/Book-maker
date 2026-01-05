@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Manuscript Formatter - Transform Your Book Instantly</title>
+    <title>AI Manuscript Formatter Pro - Transform Your Book with AI</title>
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -15,17 +16,25 @@
         :root {
             --bg-primary: #ffffff;
             --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
             --text-primary: #1a1a1a;
             --text-secondary: #4a5568;
+            --text-tertiary: #718096;
             --accent-primary: #06b6d4;
             --accent-secondary: #0891b2;
+            --accent-glow: rgba(6, 182, 212, 0.3);
             --border-color: #e2e8f0;
             --code-bg: #1e293b;
             --code-border: #06b6d4;
-            --heading-font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --heading-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             --body-font: Georgia, 'Times New Roman', serif;
-            --code-font: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+            --code-font: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
         }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
 
         body {
             font-family: var(--body-font);
@@ -36,27 +45,42 @@
         }
 
         .app-container {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-rows: auto auto 1fr;
             height: 100vh;
         }
 
         .header {
             background: var(--bg-primary);
             border-bottom: 2px solid var(--border-color);
-            padding: 1rem 2rem;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            z-index: 100;
+        }
+
+        .header-top {
             display: flex;
             align-items: center;
             gap: 1rem;
             flex-wrap: wrap;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            z-index: 100;
+            margin-bottom: 0.75rem;
+        }
+
+        .brand {
+            font-family: var(--heading-font);
+            font-weight: 800;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            white-space: nowrap;
         }
 
         .upload-zone {
             flex: 1;
             min-width: 200px;
-            padding: 1rem 1.5rem;
+            padding: 0.75rem 1.25rem;
             border: 2px dashed var(--accent-primary);
             border-radius: 8px;
             text-align: center;
@@ -68,7 +92,8 @@
         .upload-zone:hover {
             border-color: var(--accent-secondary);
             background: var(--bg-primary);
-            transform: translateY(-2px);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px var(--accent-glow);
         }
 
         .upload-zone.dragover {
@@ -80,7 +105,7 @@
         .upload-text {
             font-family: var(--heading-font);
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--accent-primary);
         }
 
@@ -92,37 +117,96 @@
             display: none;
         }
 
-        select, button {
-            padding: 0.75rem 1.25rem;
+        .ai-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        input[type="text"], input[type="password"], select, button {
+            padding: 0.6rem 1rem;
             border: 1px solid var(--border-color);
             border-radius: 6px;
             font-family: var(--heading-font);
-            font-size: 0.9rem;
-            cursor: pointer;
+            font-size: 0.85rem;
             transition: all 0.2s;
             background: var(--bg-primary);
             color: var(--text-primary);
             font-weight: 500;
         }
 
+        input[type="text"], input[type="password"] {
+            min-width: 200px;
+        }
+
+        input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
         button {
             background: var(--accent-primary);
             color: white;
             border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        button:hover {
+        button:hover:not(:disabled) {
             background: var(--accent-secondary);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+            box-shadow: 0 4px 12px var(--accent-glow);
         }
 
-        select:hover {
-            border-color: var(--accent-primary);
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        button.secondary:hover:not(:disabled) {
+            background: var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .export-bar {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .export-bar-label {
+            font-family: var(--heading-font);
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            overflow: hidden;
+        }
+
+        .main-content.with-sidebar {
+            grid-template-columns: 1fr 350px;
         }
 
         .preview-container {
-            flex: 1;
             overflow-y: auto;
             padding: 2rem;
             display: flex;
@@ -131,54 +215,113 @@
         }
 
         .book-preview {
-            max-width: 800px;
+            max-width: 850px;
             width: 100%;
             background: var(--bg-primary);
-            padding: 4rem 3rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            padding: 4rem 3.5rem;
+            box-shadow: 0 24px 72px rgba(0,0,0,0.18);
             border-radius: 4px;
-            min-height: 500px;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            background: var(--bg-primary);
+            border-left: 2px solid var(--border-color);
+            overflow-y: auto;
+            padding: 1.5rem;
+            box-shadow: -4px 0 16px rgba(0,0,0,0.05);
+        }
+
+        .sidebar h3 {
+            font-family: var(--heading-font);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .suggestion-section {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-primary);
+        }
+
+        .suggestion-section h4 {
+            font-family: var(--heading-font);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent-primary);
+            font-weight: 700;
+        }
+
+        .suggestion-section p, .suggestion-section ul {
+            font-family: var(--heading-font);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .suggestion-section ul {
+            margin-left: 1.25rem;
+        }
+
+        .copy-btn {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.7rem;
+            margin-top: 0.5rem;
         }
 
         .instructions {
             text-align: center;
             color: var(--text-secondary);
             font-family: var(--heading-font);
-            padding: 4rem 2rem;
+            padding: 3rem 2rem;
         }
 
         .instructions h2 {
-            font-size: 2rem;
-            margin-bottom: 1.5rem;
+            font-size: 2.2rem;
+            margin-bottom: 1rem;
             color: var(--text-primary);
+            font-weight: 800;
+        }
+
+        .instructions .tagline {
+            font-size: 1.2rem;
+            color: var(--accent-primary);
+            font-weight: 600;
+            margin-bottom: 2rem;
         }
 
         .instructions p {
-            font-size: 1.1rem;
+            font-size: 1rem;
             line-height: 1.8;
             max-width: 600px;
-            margin: 0 auto;
+            margin: 0 auto 1rem;
         }
 
         .instructions .arrow {
-            font-size: 1.5rem;
-            margin: 1rem 0;
+            font-size: 2rem;
+            margin: 0.5rem 0;
             color: var(--accent-primary);
         }
 
         .loading {
             text-align: center;
-            padding: 4rem 2rem;
+            padding: 3rem 2rem;
         }
 
         .spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid var(--border-color);
+            width: 64px;
+            height: 64px;
+            border: 5px solid var(--border-color);
             border-top-color: var(--accent-primary);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 2rem;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1.5rem;
         }
 
         @keyframes spin {
@@ -187,71 +330,91 @@
 
         .loading-text {
             font-family: var(--heading-font);
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             color: var(--accent-primary);
-            font-weight: 600;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
         }
 
-        /* Book Content Styling */
+        .loading-subtext {
+            font-family: var(--heading-font);
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        /* Book Content Styling - Modern AI Theme */
         .book-content h1 {
             font-family: var(--heading-font);
-            font-size: 2.5rem;
+            font-size: 3rem;
+            font-weight: 900;
+            margin: 3.5rem 0 1.5rem;
+            color: var(--text-primary);
+            line-height: 1.15;
+            page-break-after: avoid;
+            letter-spacing: -0.02em;
+        }
+
+        .book-content h2 {
+            font-family: var(--heading-font);
+            font-size: 2.2rem;
             font-weight: 800;
-            margin: 3rem 0 1.5rem;
+            margin: 3rem 0 1.25rem;
             color: var(--text-primary);
             line-height: 1.2;
             page-break-after: avoid;
         }
 
-        .book-content h2 {
+        .book-content h3 {
             font-family: var(--heading-font);
-            font-size: 2rem;
+            font-size: 1.6rem;
             font-weight: 700;
-            margin: 2.5rem 0 1.25rem;
+            margin: 2.5rem 0 1rem;
             color: var(--text-primary);
             page-break-after: avoid;
         }
 
-        .book-content h3 {
+        .book-content h4 {
             font-family: var(--heading-font);
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 600;
-            margin: 2rem 0 1rem;
-            color: var(--text-primary);
-            page-break-after: avoid;
+            margin: 2rem 0 0.75rem;
+            color: var(--text-secondary);
         }
 
         .book-content p {
-            margin-bottom: 1.2rem;
+            margin-bottom: 1.4rem;
             text-align: justify;
             hyphens: auto;
             orphans: 3;
             widows: 3;
+            font-size: 1.05rem;
         }
 
         .book-content pre,
         .book-content code {
             font-family: var(--code-font);
-            font-size: 0.9rem;
         }
 
         .book-content pre {
             background: var(--code-bg);
             color: #e2e8f0;
-            padding: 1.5rem;
-            border-left: 4px solid var(--code-border);
-            border-radius: 4px;
+            padding: 1.75rem;
+            border-left: 5px solid var(--code-border);
+            border-radius: 6px;
             overflow-x: auto;
-            margin: 1.5rem 0;
-            box-shadow: 0 4px 16px rgba(6, 182, 212, 0.2);
+            margin: 2rem 0;
+            box-shadow: 0 8px 24px var(--accent-glow), 0 0 0 1px rgba(255,255,255,0.1);
+            font-size: 0.9rem;
+            line-height: 1.6;
             page-break-inside: avoid;
         }
 
         .book-content code {
             background: var(--code-bg);
             color: var(--code-border);
-            padding: 0.2rem 0.4rem;
-            border-radius: 3px;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9em;
         }
 
         .book-content pre code {
@@ -261,33 +424,35 @@
         }
 
         .book-content blockquote {
-            border-left: 4px solid var(--accent-primary);
-            padding-left: 1.5rem;
-            margin: 1.5rem 0;
+            border-left: 5px solid var(--accent-primary);
+            padding: 1.25rem 1.75rem;
+            margin: 2rem 0;
             font-style: italic;
             color: var(--text-secondary);
             background: var(--bg-secondary);
-            padding: 1rem 1.5rem;
-            border-radius: 0 4px 4px 0;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
         .book-content ul, .book-content ol {
-            margin: 1rem 0 1.5rem 2rem;
+            margin: 1.25rem 0 1.75rem 2.5rem;
         }
 
         .book-content li {
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
         }
 
         .book-content table {
             width: 100%;
             border-collapse: collapse;
-            margin: 1.5rem 0;
+            margin: 2rem 0;
             font-size: 0.95rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
         .book-content th, .book-content td {
-            padding: 0.75rem;
+            padding: 1rem;
             border: 1px solid var(--border-color);
             text-align: left;
         }
@@ -296,7 +461,10 @@
             background: var(--code-bg);
             color: white;
             font-family: var(--heading-font);
-            font-weight: 600;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
         }
 
         .book-content tr:nth-child(even) {
@@ -307,76 +475,132 @@
             max-width: 100%;
             height: auto;
             display: block;
-            margin: 2rem auto;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin: 2.5rem auto;
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
         }
 
-        /* Theme: Grok */
+        .drop-cap::first-letter {
+            font-size: 4.5rem;
+            float: left;
+            line-height: 0.85;
+            margin: 0.1rem 0.15rem 0 0;
+            font-weight: 900;
+            font-family: var(--heading-font);
+            color: var(--accent-primary);
+        }
+
+        /* Theme: Grok Bold */
         body.theme-grok {
             --bg-primary: #ffffff;
-            --bg-secondary: #fef3f2;
+            --bg-secondary: #fff5f0;
+            --bg-tertiary: #ffe5d9;
             --text-primary: #0a0a0a;
-            --text-secondary: #525252;
+            --text-secondary: #404040;
             --accent-primary: #ff6b35;
-            --accent-secondary: #f97316;
-            --border-color: #fed7aa;
+            --accent-secondary: #ff8c42;
+            --accent-glow: rgba(255, 107, 53, 0.25);
+            --border-color: #ffd4c0;
             --code-bg: #0a0a0a;
-            --code-border: #06b6d4;
+            --code-border: #06d6f4;
         }
 
-        /* Theme: Claude */
+        body.theme-grok .book-content h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.03em;
+        }
+
+        body.theme-grok .book-content h2 {
+            border-bottom: 4px solid var(--accent-primary);
+            padding-bottom: 0.5rem;
+        }
+
+        /* Theme: Claude Elegant */
         body.theme-claude {
             --bg-primary: #fefcf8;
-            --bg-secondary: #f8f5ed;
+            --bg-secondary: #f9f6f0;
+            --bg-tertiary: #f0ebe3;
             --text-primary: #2d2d2d;
             --text-secondary: #5a5a5a;
             --accent-primary: #c17b4a;
-            --accent-secondary: #a86639;
+            --accent-secondary: #d4926f;
+            --accent-glow: rgba(193, 123, 74, 0.2);
             --border-color: #e8dcc8;
             --code-bg: #2d2d2d;
             --code-border: #c17b4a;
         }
 
-        /* Theme: Gemini */
-        body.theme-gemini {
+        body.theme-claude .book-content {
+            font-size: 1.1rem;
+        }
+
+        body.theme-claude .book-content h1 {
+            font-weight: 700;
+            font-size: 2.8rem;
+        }
+
+        body.theme-claude .book-content p {
+            line-height: 2;
+        }
+
+        /* Theme: Multimodal Future */
+        body.theme-multimodal {
             --bg-primary: #ffffff;
-            --bg-secondary: #f0f9ff;
+            --bg-secondary: #f0f4ff;
+            --bg-tertiary: #e0e7ff;
             --text-primary: #1e293b;
             --text-secondary: #475569;
             --accent-primary: #3b82f6;
-            --accent-secondary: #2563eb;
+            --accent-secondary: #60a5fa;
+            --accent-glow: rgba(59, 130, 246, 0.25);
             --border-color: #bfdbfe;
             --code-bg: #1e293b;
             --code-border: #8b5cf6;
         }
 
-        /* Theme: Dark Mode */
+        body.theme-multimodal .book-content img {
+            margin: 3rem auto;
+            max-width: 90%;
+            box-shadow: 0 12px 40px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Theme: Deep Dark */
         body.theme-dark {
             --bg-primary: #0f172a;
             --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
             --text-primary: #f1f5f9;
             --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
             --accent-primary: #06b6d4;
-            --accent-secondary: #0891b2;
+            --accent-secondary: #22d3ee;
+            --accent-glow: rgba(6, 182, 212, 0.4);
             --border-color: #334155;
             --code-bg: #020617;
             --code-border: #06b6d4;
         }
 
         body.theme-dark .book-preview {
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            box-shadow: 0 24px 72px rgba(0,0,0,0.6);
         }
 
-        /* Theme: Print Classic */
+        body.theme-dark .book-content pre {
+            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.3), 0 0 0 1px rgba(6, 182, 212, 0.2);
+        }
+
+        /* Theme: Print Master */
         body.theme-print {
             --bg-primary: #ffffff;
-            --bg-secondary: #f8f8f8;
+            --bg-secondary: #fafafa;
+            --bg-tertiary: #f5f5f5;
             --text-primary: #000000;
             --text-secondary: #333333;
             --accent-primary: #000000;
-            --accent-secondary: #000000;
-            --border-color: #cccccc;
+            --accent-secondary: #1a1a1a;
+            --accent-glow: rgba(0, 0, 0, 0.1);
+            --border-color: #d4d4d4;
             --code-bg: #f5f5f5;
             --code-border: #000000;
         }
@@ -385,6 +609,12 @@
             box-shadow: none;
             background: #f5f5f5;
             color: #000000;
+            border-left: 3px solid #000;
+        }
+
+        body.theme-print .book-content h1 {
+            border-top: 2px solid #000;
+            padding-top: 1rem;
         }
 
         /* Print Styles */
@@ -393,8 +623,12 @@
                 background: white;
             }
 
-            .header {
-                display: none;
+            .header, .sidebar {
+                display: none !important;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr !important;
             }
 
             .preview-container {
@@ -404,7 +638,7 @@
             .book-preview {
                 max-width: 100%;
                 box-shadow: none;
-                padding: 0.75in 1in;
+                padding: 0;
                 margin: 0;
             }
 
@@ -420,6 +654,24 @@
             @page {
                 size: 6in 9in;
                 margin: 0.75in 1in;
+
+                @top-left {
+                    content: "AI-Generated Book";
+                    font-family: var(--heading-font);
+                    font-size: 9pt;
+                }
+
+                @top-right {
+                    content: string(chapter);
+                    font-family: var(--heading-font);
+                    font-size: 9pt;
+                }
+
+                @bottom-center {
+                    content: counter(page);
+                    font-family: var(--heading-font);
+                    font-size: 10pt;
+                }
             }
 
             .book-content pre,
@@ -430,9 +682,21 @@
             }
         }
 
+        @media (max-width: 1024px) {
+            .main-content.with-sidebar {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                border-left: none;
+                border-top: 2px solid var(--border-color);
+            }
+        }
+
         @media (max-width: 768px) {
-            .header {
-                padding: 1rem;
+            .header-top {
+                flex-direction: column;
+                align-items: stretch;
             }
 
             .book-preview {
@@ -440,84 +704,102 @@
             }
 
             .book-content h1 {
-                font-size: 2rem;
+                font-size: 2.2rem;
             }
 
             .book-content h2 {
-                font-size: 1.6rem;
+                font-size: 1.8rem;
             }
 
-            .book-content h3 {
-                font-size: 1.3rem;
+            input[type="text"], input[type="password"] {
+                min-width: 100%;
             }
         }
 
-        .brand {
-            font-family: var(--heading-font);
-            font-weight: 800;
-            font-size: 1.1rem;
-            color: var(--accent-primary);
-            white-space: nowrap;
-        }
-
-        .brand-divider {
-            display: none;
-        }
-
-        @media (min-width: 1024px) {
-            .brand-divider {
-                display: block;
-                width: 2px;
-                height: 2rem;
-                background: var(--border-color);
-            }
+        .icon {
+            width: 16px;
+            height: 16px;
+            display: inline-block;
         }
     </style>
 </head>
 <body>
     <div class="app-container">
         <header class="header">
-            <div class="brand">AI Manuscript Formatter</div>
-            <div class="brand-divider"></div>
-            <div class="upload-zone" id="uploadZone">
-                <div class="upload-text">Drag & Drop .docx or Click to Upload</div>
-                <input type="file" id="fileInput" accept=".docx">
+            <div class="header-top">
+                <div class="brand">✨ AI Manuscript Formatter Pro</div>
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-text">📄 Drag & Drop .docx or Click to Upload</div>
+                    <input type="file" id="fileInput" accept=".docx">
+                </div>
+                <select id="themeSelector">
+                    <option value="modern-ai">Modern AI</option>
+                    <option value="grok">Grok Bold</option>
+                    <option value="claude">Claude Elegant</option>
+                    <option value="multimodal">Multimodal Future</option>
+                    <option value="dark">Deep Dark</option>
+                    <option value="print">Print Master</option>
+                </select>
+                <div class="ai-controls">
+                    <input type="password" id="apiKey" placeholder="🤖 Grok API Key (optional)">
+                    <button id="enhanceBtn" disabled>✨ Enhance with AI</button>
+                </div>
             </div>
-            <select id="themeSelector">
-                <option value="modern-ai">Modern AI</option>
-                <option value="grok">Grok</option>
-                <option value="claude">Claude</option>
-                <option value="gemini">Gemini</option>
-                <option value="dark">Dark Mode</option>
-                <option value="print">Print Classic</option>
-            </select>
-            <button id="downloadBtn" style="display: none;">Download PDF</button>
+            <div class="export-bar" id="exportBar" style="display: none;">
+                <span class="export-bar-label">Export:</span>
+                <button class="secondary" id="downloadHtml">💾 HTML</button>
+                <button class="secondary" id="downloadStyledHtml">🎨 Styled HTML</button>
+                <button class="secondary" id="downloadMarkdown">📝 Markdown</button>
+                <button class="secondary" id="copyText">📋 Copy Text</button>
+                <button class="secondary" id="downloadPdf">📄 Print PDF</button>
+            </div>
         </header>
 
-        <div class="preview-container">
-            <div class="book-preview">
-                <div class="instructions">
-                    <h2>Transform Your Manuscript with AI</h2>
-                    <p>
-                        Upload your .docx file
-                        <div class="arrow">↓</div>
-                        Watch AI turn it into a beautiful book
-                        <div class="arrow">↓</div>
-                        Choose your theme
-                        <div class="arrow">↓</div>
-                        Print to PDF
-                    </p>
+        <div class="main-content" id="mainContent">
+            <div class="preview-container">
+                <div class="book-preview">
+                    <div class="instructions">
+                        <h2>Transform Your Manuscript Into a Masterpiece</h2>
+                        <p class="tagline">AI-Powered Book Formatting in Seconds</p>
+                        <p>
+                            <strong>Step 1:</strong> Upload your .docx manuscript
+                            <div class="arrow">↓</div>
+                            <strong>Step 2:</strong> (Optional) Add your Grok API key & click "Enhance with AI"
+                            <div class="arrow">↓</div>
+                            <strong>Step 3:</strong> Choose your perfect theme
+                            <div class="arrow">↓</div>
+                            <strong>Step 4:</strong> Export as HTML, Markdown, or Print to PDF
+                        </p>
+                        <p style="margin-top: 2rem; font-size: 0.9rem; color: var(--text-tertiary);">
+                            Get your Grok API key at <a href="https://x.ai/api" target="_blank" style="color: var(--accent-primary);">x.ai/api</a>
+                        </p>
+                    </div>
                 </div>
+            </div>
+            <div class="sidebar" id="sidebar" style="display: none;">
+                <h3>🤖 AI Insights</h3>
+                <div id="aiSuggestions"></div>
             </div>
         </div>
     </div>
 
     <script>
+        // DOM Elements
         const uploadZone = document.getElementById('uploadZone');
         const fileInput = document.getElementById('fileInput');
         const themeSelector = document.getElementById('themeSelector');
-        const downloadBtn = document.getElementById('downloadBtn');
+        const apiKeyInput = document.getElementById('apiKey');
+        const enhanceBtn = document.getElementById('enhanceBtn');
+        const exportBar = document.getElementById('exportBar');
         const bookPreview = document.querySelector('.book-preview');
+        const mainContent = document.getElementById('mainContent');
+        const sidebar = document.getElementById('sidebar');
+        const aiSuggestions = document.getElementById('aiSuggestions');
+
+        // State
+        let currentHtml = '';
+        let currentText = '';
+        let manuscriptTitle = 'Untitled Manuscript';
 
         // Upload zone click
         uploadZone.addEventListener('click', () => fileInput.click());
@@ -560,17 +842,28 @@
             }
         });
 
-        // Download PDF
-        downloadBtn.addEventListener('click', () => {
-            window.print();
+        // API Key input
+        apiKeyInput.addEventListener('input', (e) => {
+            enhanceBtn.disabled = !e.target.value.trim() || !currentHtml;
         });
+
+        // Enhance with AI
+        enhanceBtn.addEventListener('click', enhanceWithAI);
+
+        // Export buttons
+        document.getElementById('downloadHtml').addEventListener('click', downloadHtml);
+        document.getElementById('downloadStyledHtml').addEventListener('click', downloadStyledHtml);
+        document.getElementById('downloadMarkdown').addEventListener('click', downloadMarkdown);
+        document.getElementById('copyText').addEventListener('click', copyText);
+        document.getElementById('downloadPdf').addEventListener('click', () => window.print());
 
         // Process file
         async function processFile(file) {
             bookPreview.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    <div class="loading-text">AI is transforming your manuscript...</div>
+                    <div class="loading-text">AI is transforming your manuscript into a masterpiece...</div>
+                    <div class="loading-subtext">Parsing .docx and applying intelligent formatting</div>
                 </div>
             `;
 
@@ -581,51 +874,259 @@
                         "p[style-name='Heading 1'] => h1:fresh",
                         "p[style-name='Heading 2'] => h2:fresh",
                         "p[style-name='Heading 3'] => h3:fresh",
+                        "p[style-name='Heading 4'] => h4:fresh",
                         "p[style-name='Code'] => pre:fresh",
-                        "p[style-name='Quote'] => blockquote:fresh"
-                    ]
+                        "p[style-name='Quote'] => blockquote:fresh",
+                        "p[style-name='Intense Quote'] => blockquote:fresh"
+                    ],
+                    includeDefaultStyleMap: true
                 });
 
                 let html = result.value;
 
                 // Enhance code blocks
                 html = html.replace(/<p>```([\s\S]*?)```<\/p>/g, '<pre><code>$1</code></pre>');
+                html = html.replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>');
                 html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
 
-                // Clean up extra line breaks
+                // Detect prompts (lines starting with "Prompt:" or "User:" or "AI:")
+                html = html.replace(/<p>((?:Prompt|User|AI|System):\s*.*?)<\/p>/gi, '<pre><code>$1</code></pre>');
+
+                // Clean up
                 html = html.replace(/<p><\/p>/g, '');
+                html = html.replace(/<p>\s*<\/p>/g, '');
 
-                bookPreview.innerHTML = `<div class="book-content">${html}</div>`;
-                downloadBtn.style.display = 'block';
+                currentHtml = html;
+                currentText = result.value.replace(/<[^>]*>/g, '').replace(/\n\n+/g, '\n\n');
 
-                // Add drop cap to first paragraph after first h1 (optional)
-                const firstH1 = bookPreview.querySelector('h1');
-                if (firstH1 && firstH1.nextElementSibling && firstH1.nextElementSibling.tagName === 'P') {
-                    const firstP = firstH1.nextElementSibling;
-                    const text = firstP.textContent;
-                    if (text.length > 0) {
-                        firstP.innerHTML = `<span style="font-size: 3.5rem; float: left; line-height: 0.9; margin: 0.1rem 0.1rem 0 0; font-weight: bold; font-family: var(--heading-font);">${text[0]}</span>${text.slice(1)}`;
-                    }
+                // Extract title
+                const titleMatch = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
+                if (titleMatch) {
+                    manuscriptTitle = titleMatch[1].replace(/<[^>]*>/g, '');
                 }
+
+                renderBook(html);
+                exportBar.style.display = 'flex';
+                enhanceBtn.disabled = !apiKeyInput.value.trim();
 
             } catch (error) {
                 bookPreview.innerHTML = `
                     <div class="instructions">
-                        <h2 style="color: #ef4444;">Error Processing File</h2>
-                        <p>There was an error processing your .docx file. Please make sure it's a valid Word document.</p>
-                        <p style="margin-top: 1rem; font-size: 0.9rem; color: #ef4444;">${error.message}</p>
+                        <h2 style="color: var(--error);">❌ Error Processing File</h2>
+                        <p>There was an error processing your .docx file. Please ensure it's a valid Word document.</p>
+                        <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--error);">${error.message}</p>
                     </div>
                 `;
             }
         }
 
-        // Prevent accidental navigation
-        window.addEventListener('beforeunload', (e) => {
-            if (downloadBtn.style.display !== 'none') {
-                e.preventDefault();
-                e.returnValue = '';
+        function renderBook(html) {
+            bookPreview.innerHTML = `<div class="book-content">${html}</div>`;
+
+            // Add drop cap to first paragraph after first h1
+            const firstH1 = bookPreview.querySelector('h1');
+            if (firstH1 && firstH1.nextElementSibling && firstH1.nextElementSibling.tagName === 'P') {
+                const firstP = firstH1.nextElementSibling;
+                if (firstP.textContent.trim().length > 50) {
+                    firstP.classList.add('drop-cap');
+                }
             }
-        });
+        }
+
+        // Enhance with AI using Grok API
+        async function enhanceWithAI() {
+            const apiKey = apiKeyInput.value.trim();
+            if (!apiKey || !currentText) return;
+
+            enhanceBtn.disabled = true;
+            enhanceBtn.textContent = '🤖 AI Analyzing...';
+
+            const prompt = `You are a professional book publishing consultant. Analyze this manuscript and provide:
+
+1. **Title Improvement**: Suggest a better title and subtitle if needed
+2. **Back Cover Blurb**: Write a compelling 2-3 sentence book description
+3. **Amazon Categories**: Suggest 3-5 relevant Amazon book categories
+4. **Keywords**: List 7 high-impact keywords for discoverability
+5. **Cover Concept**: Describe a professional cover design idea
+6. **Structural Suggestions**: Offer 2-3 high-level edits to improve flow
+
+Manuscript excerpt (first 3000 chars):
+${currentText.substring(0, 3000)}
+
+Respond in JSON format:
+{
+  "title": "...",
+  "subtitle": "...",
+  "blurb": "...",
+  "categories": ["...", "..."],
+  "keywords": ["...", "..."],
+  "coverConcept": "...",
+  "structuralEdits": ["...", "..."]
+}`;
+
+            try {
+                const response = await fetch('https://api.x.ai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            {
+                                role: 'system',
+                                content: 'You are an expert book publishing consultant. Always respond with valid JSON.'
+                            },
+                            {
+                                role: 'user',
+                                content: prompt
+                            }
+                        ],
+                        model: 'grok-beta',
+                        stream: false,
+                        temperature: 0.7
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const suggestions = JSON.parse(data.choices[0].message.content);
+
+                displayAISuggestions(suggestions);
+                sidebar.style.display = 'block';
+                mainContent.classList.add('with-sidebar');
+
+            } catch (error) {
+                alert(`AI Enhancement Error: ${error.message}\n\nPlease check your API key and try again.`);
+                console.error('Grok API Error:', error);
+            } finally {
+                enhanceBtn.disabled = false;
+                enhanceBtn.textContent = '✨ Enhance with AI';
+            }
+        }
+
+        function displayAISuggestions(suggestions) {
+            aiSuggestions.innerHTML = `
+                <div class="suggestion-section">
+                    <h4>📚 Title Suggestion</h4>
+                    <p><strong>${suggestions.title}</strong></p>
+                    ${suggestions.subtitle ? `<p><em>${suggestions.subtitle}</em></p>` : ''}
+                    <button class="copy-btn secondary" onclick="copyToClipboard('${escapeHtml(suggestions.title)}')">📋 Copy</button>
+                </div>
+
+                <div class="suggestion-section">
+                    <h4>✍️ Back Cover Blurb</h4>
+                    <p>${suggestions.blurb}</p>
+                    <button class="copy-btn secondary" onclick="copyToClipboard(\`${escapeHtml(suggestions.blurb)}\`)">📋 Copy</button>
+                </div>
+
+                <div class="suggestion-section">
+                    <h4>🏷️ Amazon Categories</h4>
+                    <ul>${suggestions.categories.map(cat => `<li>${cat}</li>`).join('')}</ul>
+                    <button class="copy-btn secondary" onclick="copyToClipboard(\`${escapeHtml(suggestions.categories.join(', '))}\`)">📋 Copy</button>
+                </div>
+
+                <div class="suggestion-section">
+                    <h4>🔑 Keywords</h4>
+                    <p>${suggestions.keywords.join(', ')}</p>
+                    <button class="copy-btn secondary" onclick="copyToClipboard(\`${escapeHtml(suggestions.keywords.join(', '))}\`)">📋 Copy</button>
+                </div>
+
+                <div class="suggestion-section">
+                    <h4>🎨 Cover Concept</h4>
+                    <p>${suggestions.coverConcept}</p>
+                    <button class="copy-btn secondary" onclick="copyToClipboard(\`${escapeHtml(suggestions.coverConcept)}\`)">📋 Copy</button>
+                </div>
+
+                <div class="suggestion-section">
+                    <h4>🔧 Structural Edits</h4>
+                    <ul>${suggestions.structuralEdits.map(edit => `<li>${edit}</li>`).join('')}</ul>
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
+        }
+
+        window.copyToClipboard = async function(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                alert('✅ Copied to clipboard!');
+            } catch (err) {
+                alert('Failed to copy. Please try again.');
+            }
+        };
+
+        // Export Functions
+        function downloadHtml() {
+            const blob = new Blob([currentHtml], { type: 'text/html' });
+            saveAs(blob, `${manuscriptTitle.replace(/[^a-z0-9]/gi, '-')}.html`);
+        }
+
+        function downloadStyledHtml() {
+            const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${manuscriptTitle}</title>
+    <style>
+        body { font-family: Georgia, serif; line-height: 1.8; max-width: 800px; margin: 2rem auto; padding: 2rem; }
+        h1 { font-size: 2.5rem; margin: 2rem 0 1rem; }
+        h2 { font-size: 2rem; margin: 1.5rem 0 1rem; }
+        h3 { font-size: 1.5rem; margin: 1.25rem 0 0.75rem; }
+        p { margin-bottom: 1rem; text-align: justify; }
+        pre { background: #1e293b; color: #e2e8f0; padding: 1.5rem; border-radius: 6px; overflow-x: auto; }
+        code { font-family: 'Courier New', monospace; }
+        blockquote { border-left: 4px solid #06b6d4; padding-left: 1.5rem; margin: 1.5rem 0; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 0.75rem; border: 1px solid #ddd; }
+        th { background: #f5f5f5; font-weight: bold; }
+    </style>
+</head>
+<body>
+${currentHtml}
+</body>
+</html>`;
+            const blob = new Blob([fullHtml], { type: 'text/html' });
+            saveAs(blob, `${manuscriptTitle.replace(/[^a-z0-9]/gi, '-')}-styled.html`);
+        }
+
+        function downloadMarkdown() {
+            let markdown = currentHtml
+                .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n')
+                .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
+                .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n')
+                .replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n\n')
+                .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+                .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+                .replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`')
+                .replace(/<pre[^>]*><code[^>]*>(.*?)<\/code><\/pre>/gis, '```\n$1\n```\n\n')
+                .replace(/<pre[^>]*>(.*?)<\/pre>/gis, '```\n$1\n```\n\n')
+                .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gis, '> $1\n\n')
+                .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
+                .replace(/<br\s*\/?>/gi, '\n')
+                .replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n')
+                .replace(/<\/?[uo]l[^>]*>/gi, '\n')
+                .replace(/<[^>]+>/g, '')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+
+            const blob = new Blob([markdown], { type: 'text/markdown' });
+            saveAs(blob, `${manuscriptTitle.replace(/[^a-z0-9]/gi, '-')}.md`);
+        }
+
+        function copyText() {
+            navigator.clipboard.writeText(currentText).then(() => {
+                alert('✅ Text copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy text. Please try again.');
+            });
+        }
     </script>
 </body>
 </html>
