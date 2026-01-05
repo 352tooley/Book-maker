@@ -324,6 +324,21 @@
             background: var(--bg-primary);
         }
 
+        .book-preview.continuous .book-content {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .book-preview.continuous .book-content * {
+            color: inherit;
+        }
+
+        .book-preview.continuous .book-content h1,
+        .book-preview.continuous .book-content h2,
+        .book-preview.continuous .book-content h3 {
+            color: var(--text-primary);
+        }
+
         .book-page {
             width: var(--book-width);
             min-width: var(--book-width);
@@ -339,20 +354,47 @@
         /* Mobile responsive pages */
         @media (max-width: 768px) {
             .book-page {
-                width: 90vw;
-                min-width: 90vw;
-                height: calc(90vw * 1.5);
-                padding: 8vw 6vw;
+                width: 95vw;
+                min-width: 95vw;
+                height: calc(95vw * 1.5);
+                padding: 6vw 5vw;
+                font-size: 14px;
             }
 
             .preview-viewport {
-                padding: 1rem;
+                padding: 0.5rem;
+            }
+
+            .book-content h1 {
+                font-size: 1.5rem;
+                margin: 1rem 0 0.75rem;
+            }
+
+            .book-content h2 {
+                font-size: 1.25rem;
+                margin: 1rem 0 0.5rem;
+            }
+
+            .book-content h3 {
+                font-size: 1.1rem;
+                margin: 0.75rem 0 0.5rem;
+            }
+
+            .book-content p {
+                margin-bottom: 0.75rem;
+                font-size: 14px;
             }
         }
 
         .page-content {
-            height: calc(100% - 0.75in);
+            height: 100%;
             overflow: hidden;
+        }
+
+        @media (max-width: 768px) {
+            .page-content {
+                height: calc(100% - 12vw);
+            }
         }
 
         .page-footer {
@@ -989,24 +1031,22 @@
         }
 
         function renderAllPages() {
-            // Split content into smaller chunks for more pages
+            // Pure character-based pagination for maximum pages
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = currentHtml;
             const elements = Array.from(tempDiv.children);
             const sections = [];
             let currentSection = [];
             let charCount = 0;
-            const charsPerPage = 1200; // Approximate characters per page (realistic book page)
+            const charsPerPage = 800; // Smaller chunks = more pages
 
             elements.forEach(el => {
                 const elementText = el.textContent || '';
                 const elementChars = elementText.length;
 
-                // Start new page on H1, or if we've reached character limit
-                if (el.tagName === 'H1' || (charCount > charsPerPage && currentSection.length > 0)) {
-                    if (currentSection.length > 0) {
-                        sections.push(currentSection.map(e => e.outerHTML).join(''));
-                    }
+                // Start new page only when we exceed character limit
+                if (charCount > charsPerPage && currentSection.length > 0) {
+                    sections.push(currentSection.map(e => e.outerHTML).join(''));
                     currentSection = [el];
                     charCount = elementChars;
                 } else {
