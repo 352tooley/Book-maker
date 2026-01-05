@@ -982,14 +982,22 @@ Respond in JSON format:
                                 content: prompt
                             }
                         ],
-                        model: 'grok-beta',
+                        model: 'grok-2-latest',
                         stream: false,
                         temperature: 0.7
                     })
                 });
 
                 if (!response.ok) {
-                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                    const errorText = await response.text();
+                    let errorMsg = `API Error ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        errorMsg += `\n${errorData.error?.message || errorText}`;
+                    } catch {
+                        errorMsg += `\n${errorText}`;
+                    }
+                    throw new Error(errorMsg);
                 }
 
                 const data = await response.json();
