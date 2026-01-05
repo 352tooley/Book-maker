@@ -429,6 +429,39 @@
             color: rgba(255,255,255,0.8);
         }
 
+        .chapter-actions {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            gap: 0.25rem;
+        }
+
+        .chapter-item:hover .chapter-actions {
+            display: flex;
+        }
+
+        .chapter-delete-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .chapter-delete-btn:hover {
+            background: var(--error);
+            transform: scale(1.1);
+        }
+
         .editor-container {
             background: var(--bg-primary);
             overflow-y: auto;
@@ -988,8 +1021,42 @@
                     onclick="switchToChapter(${chapter.id})">
                     <div class="chapter-title-text">${chapter.title}</div>
                     <div class="chapter-meta-text">${chapter.wordCount} words</div>
+                    <div class="chapter-actions" onclick="event.stopPropagation()">
+                        <button class="chapter-delete-btn" onclick="deleteChapter(${chapter.id})" title="Delete chapter">🗑️</button>
+                    </div>
                 </li>
             `).join('');
+        }
+
+        // Delete Chapter
+        function deleteChapter(chapterId) {
+            const book = getCurrentBook();
+            if (!book) return;
+
+            // Don't allow deleting the last chapter
+            if (book.chapters.length === 1) {
+                alert('Cannot delete the last chapter. A book must have at least one chapter.');
+                return;
+            }
+
+            const chapter = book.chapters.find(c => c.id === chapterId);
+            if (!chapter) return;
+
+            if (!confirm(`Delete "${chapter.title}"? This cannot be undone.`)) {
+                return;
+            }
+
+            // Remove the chapter
+            book.chapters = book.chapters.filter(c => c.id !== chapterId);
+
+            // If we deleted the current chapter, switch to the first chapter
+            if (appState.currentChapterId === chapterId) {
+                appState.currentChapterId = book.chapters[0].id;
+                loadCurrentChapter();
+            }
+
+            renderChapters();
+            saveState();
         }
 
         // Add Chapter
