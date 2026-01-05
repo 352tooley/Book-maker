@@ -321,6 +321,7 @@
             padding: 3.5rem 3rem;
             border-radius: 4px;
             min-height: 600px;
+            background: var(--bg-primary);
         }
 
         .book-page {
@@ -333,6 +334,20 @@
             box-shadow: 0 0 0 1px rgba(0,0,0,0.1), 0 20px 60px rgba(0,0,0,0.4);
             margin-bottom: 2rem;
             flex-shrink: 0;
+        }
+
+        /* Mobile responsive pages */
+        @media (max-width: 768px) {
+            .book-page {
+                width: 90vw;
+                min-width: 90vw;
+                height: calc(90vw * 1.5);
+                padding: 8vw 6vw;
+            }
+
+            .preview-viewport {
+                padding: 1rem;
+            }
         }
 
         .page-content {
