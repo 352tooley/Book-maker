@@ -299,13 +299,14 @@
         .preview-viewport {
             flex: 1;
             overflow-y: auto;
-            overflow-x: hidden;
+            overflow-x: auto;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 2rem;
             gap: 2rem;
             scroll-behavior: smooth;
+            min-width: 0;
         }
 
         .book-preview {
@@ -324,6 +325,7 @@
 
         .book-page {
             width: var(--book-width);
+            min-width: var(--book-width);
             height: var(--book-height);
             padding: 0.75in 1in;
             background: var(--bg-primary);
@@ -427,6 +429,10 @@
         }
 
         /* Book Content Styling */
+        .book-content {
+            color: var(--text-primary);
+        }
+
         .book-content h1 {
             font-family: var(--heading-font);
             font-size: 2.5rem;
@@ -975,7 +981,7 @@
             const sections = [];
             let currentSection = [];
             let charCount = 0;
-            const charsPerPage = 2500; // Approximate characters per page
+            const charsPerPage = 1200; // Approximate characters per page (realistic book page)
 
             elements.forEach(el => {
                 const elementText = el.textContent || '';
