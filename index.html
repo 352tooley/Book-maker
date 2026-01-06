@@ -7,6 +7,7 @@
 
 <!-- Libraries -->
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/diff-match-patch@1.0.5/index.min.js"></script>
 
 <style>
   :root{
@@ -18,6 +19,10 @@
     --brand:#4b68ff;
     --danger:#e11d48;
     --ok:#10b981;
+    --add-bg: rgba(16,185,129,.16);
+    --add-bd: rgba(16,185,129,.35);
+    --del-bg: rgba(225,29,72,.12);
+    --del-bd: rgba(225,29,72,.28);
   }
   body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:var(--bg); color:var(--ink); }
   header { background:#111; color:#fff; padding:10px 14px; display:flex; align-items:center; gap:10px; }
@@ -137,18 +142,74 @@
   #aiPanelHeader .reject{ background:var(--danger); color:#fff; }
   #aiPanelHeader button:disabled{ opacity:.5; cursor:not-allowed; }
 
-  #aiOutput {
+  /* Tabs */
+  #aiTabs{
+    display:flex;
+    gap:6px;
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+    background:#fff;
+  }
+  .tabBtn{
+    padding:7px 10px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:#fff;
+    cursor:pointer;
+    font-size:12px;
+  }
+  .tabBtn.active{
+    border-color: rgba(75,104,255,.35);
+    color:#2b3cff;
+    background: rgba(75,104,255,.06);
+    font-weight:700;
+  }
+
+  #aiBody{
+    flex:1;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+  }
+
+  #aiPreview, #aiDiff{
     flex:1;
     padding:14px 14px 18px;
     overflow:auto;
     font-family: ui-serif, Georgia, "Times New Roman", serif;
     line-height:1.65;
+    display:none;
   }
-  #aiOutput .placeholder{
+  #aiPreview.active, #aiDiff.active{ display:block; }
+
+  #aiPreview .placeholder, #aiDiff .placeholder{
     color:var(--muted);
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
     font-size:13px;
   }
+
+  /* Diff styling */
+  #aiDiff ins{
+    background: var(--add-bg);
+    border:1px solid var(--add-bd);
+    padding:0 2px;
+    border-radius:6px;
+    text-decoration:none;
+  }
+  #aiDiff del{
+    background: var(--del-bg);
+    border:1px solid var(--del-bd);
+    padding:0 2px;
+    border-radius:6px;
+    text-decoration: line-through;
+  }
+  #aiDiff .diffWrap{
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: ui-serif, Georgia, "Times New Roman", serif;
+    line-height:1.65;
+  }
+
   #aiStatusBar{
     border-top:1px solid var(--line);
     padding:10px 12px;
@@ -210,7 +271,6 @@
   .modal-box .actions .save{ background:var(--brand); color:#fff; }
   .modal-box .actions .cancel{ background:#eef1f7; }
 
-  /* Mobile: hide AI panel by default */
   @media (max-width: 980px){
     #aiPanel{ display:none; }
   }
@@ -281,7 +341,7 @@
     <div id="editorWrap">
       <div id="editor" contenteditable="true"></div>
 
-      <!-- AI Preview Panel -->
+      <!-- AI Panel -->
       <section id="aiPanel">
         <div id="aiPanelHeader">
           <div>
@@ -293,8 +353,18 @@
           <button class="apply" id="aiApplyBtn" onclick="aiApply()" disabled>Apply</button>
         </div>
 
-        <div id="aiOutput">
-          <div class="placeholder">Run an AI action to preview changes here. Then click <b>Apply</b> or <b>Reject</b>.</div>
+        <div id="aiTabs">
+          <button class="tabBtn active" id="tabPreview" onclick="aiShowTab('preview')">Preview</button>
+          <button class="tabBtn" id="tabDiff" onclick="aiShowTab('diff')">Diff</button>
+        </div>
+
+        <div id="aiBody">
+          <div id="aiPreview" class="active">
+            <div class="placeholder">Run an AI action to preview changes here. Then click <b>Apply</b> or <b>Reject</b>.</div>
+          </div>
+          <div id="aiDiff">
+            <div class="placeholder">Diff will appear here after the preview is ready.</div>
+          </div>
         </div>
 
         <div id="aiStatusBar">
