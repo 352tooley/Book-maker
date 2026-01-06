@@ -15,37 +15,37 @@
         }
 
         :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --bg-tertiary: #e9ecef;
-            --bg-dark: #0f172a;
-            --bg-darker: #020617;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-tertiary: #64748b;
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #222222;
+            --bg-tertiary: #2a2a2a;
+            --bg-dark: #0d0d0d;
+            --bg-darker: #080808;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a0a0a0;
+            --text-tertiary: #707070;
             --text-white: #ffffff;
-            --accent-primary: #0ea5e9;
-            --accent-secondary: #0284c7;
-            --accent-purple: #8b5cf6;
-            --accent-green: #10b981;
-            --accent-orange: #f59e0b;
-            --accent-red: #ef4444;
-            --accent-glow: rgba(14, 165, 233, 0.15);
-            --border-color: #e2e8f0;
-            --code-bg: #1e293b;
-            --code-border: #0ea5e9;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --error: #ef4444;
+            --accent-primary: #00d9ff;
+            --accent-secondary: #00b8d4;
+            --accent-purple: #a78bfa;
+            --accent-green: #34d399;
+            --accent-orange: #fbbf24;
+            --accent-red: #f87171;
+            --accent-glow: rgba(0, 217, 255, 0.2);
+            --border-color: #333333;
+            --code-bg: #0d0d0d;
+            --code-border: #00d9ff;
+            --success: #34d399;
+            --warning: #fbbf24;
+            --error: #f87171;
             --heading-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             --body-font: Georgia, 'Times New Roman', serif;
             --code-font: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
             --sidebar-width: 280px;
             --right-sidebar-width: 320px;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.8);
         }
 
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@300;400;700&display=swap');
@@ -125,7 +125,7 @@
         }
 
         .nav-btn.secondary:hover {
-            background: rgba(14, 165, 233, 0.1);
+            background: rgba(0, 217, 255, 0.15);
             box-shadow: 0 4px 12px var(--accent-glow);
         }
 
@@ -262,7 +262,7 @@
         .book-cover {
             width: 100%;
             height: 200px;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            background: linear-gradient(135deg, #00d9ff, #00b8d4, #0284c7);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -642,7 +642,7 @@
             flex-wrap: wrap;
             align-items: center;
             z-index: 100;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
 
         .toolbar-group {
@@ -702,7 +702,7 @@
         }
 
         .section-title-input:focus {
-            background: var(--bg-secondary);
+            background: rgba(0, 217, 255, 0.05);
             border-radius: 6px;
         }
 
@@ -719,7 +719,7 @@
 
         .editor-content:focus {
             border-color: var(--accent-primary);
-            background: var(--bg-secondary);
+            background: var(--bg-primary);
         }
 
         /* Editor Content Formatting Styles */
@@ -979,8 +979,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
             z-index: 2000;
             align-items: center;
             justify-content: center;
@@ -1188,16 +1188,16 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--bg-secondary);
+            background: var(--bg-dark);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: var(--accent-primary);
+            background: var(--bg-tertiary);
             border-radius: 5px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--accent-secondary);
+            background: var(--accent-primary);
         }
     </style>
 </head>
