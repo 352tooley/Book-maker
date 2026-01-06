@@ -7,104 +7,229 @@
 
 <!-- Libraries -->
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
 <style>
-body { margin:0; font-family: system-ui, Arial; background:#f5f6f8; }
-header { background:#111; color:#fff; padding:10px 16px; display:flex; align-items:center; gap:12px; }
-header strong { font-size:18px; }
-header button { padding:6px 10px; }
+  :root{
+    --bg:#f5f6f8;
+    --panel:#ffffff;
+    --ink:#111;
+    --muted:#666;
+    --line:#d9dde5;
+    --brand:#4b68ff;
+    --danger:#e11d48;
+    --ok:#10b981;
+  }
+  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:var(--bg); color:var(--ink); }
+  header { background:#111; color:#fff; padding:10px 14px; display:flex; align-items:center; gap:10px; }
+  header strong { font-size:16px; }
+  header button { padding:7px 10px; border:0; border-radius:8px; background:#2a2c31; color:#fff; }
+  header button:hover { filter:brightness(1.08); }
+  header .primary { background:var(--brand); }
+  header .danger { background:var(--danger); }
+  header .ghost { background:transparent; border:1px solid rgba(255,255,255,.2); }
+  #saveStatus { margin-left:auto; font-size:12px; opacity:.85; }
 
-#layout { display:flex; height:calc(100vh - 48px); }
+  #layout { display:flex; height:calc(100vh - 48px); }
 
-#sidebar {
-  width:240px;
-  background:#1e1f22;
-  color:#fff;
-  padding:10px;
-  overflow:auto;
-}
-#sidebar h3 { margin:6px 0; font-size:14px; }
+  #sidebar {
+    width:240px;
+    background:#1e1f22;
+    color:#fff;
+    padding:10px;
+    overflow:auto;
+  }
+  #sidebar h3 { margin:6px 0 10px; font-size:13px; opacity:.9; }
+  .chapter {
+    background:#2a2c31;
+    margin-bottom:8px;
+    padding:8px 8px 8px 10px;
+    border-radius:10px;
+    cursor:pointer;
+    position:relative;
+  }
+  .chapter.active { background:var(--brand); }
+  .chapter small { opacity:.9; }
+  .chapter button {
+    position:absolute; right:8px; top:8px;
+    width:26px; height:26px; border-radius:8px;
+    border:0; background:rgba(0,0,0,.25); color:#fff;
+  }
 
-.chapter {
-  background:#2a2c31;
-  margin-bottom:6px;
-  padding:6px;
-  border-radius:6px;
-  cursor:pointer;
-}
-.chapter.active { background:#4b68ff; }
-.chapter button { float:right; }
+  #main {
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+  }
+  #chapterTitle {
+    width:100%;
+    padding:12px 14px;
+    font-size:20px;
+    border:0;
+    border-bottom:1px solid var(--line);
+    outline:none;
+    background:var(--panel);
+  }
+  #toolbar {
+    background:var(--panel);
+    border-bottom:1px solid var(--line);
+    padding:8px 10px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+  }
+  select, input[type=text] { padding:7px 8px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+  label { font-size:13px; color:var(--muted); display:flex; gap:6px; align-items:center; }
+  #toolbar .spacer { margin-left:auto; color:var(--muted); font-size:13px; }
 
-#main {
-  flex:1;
-  display:flex;
-  flex-direction:column;
-}
+  #editorWrap{
+    flex:1;
+    display:flex;
+    min-height:0;
+  }
 
-#toolbar {
-  background:#fff;
-  border-bottom:1px solid #ccc;
-  padding:8px;
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  align-items:center;
-}
+  #editor {
+    flex:1;
+    padding:22px 24px;
+    background:var(--panel);
+    outline:none;
+    overflow:auto;
+    min-width:0;
+  }
+  #editor:focus { outline:none; }
 
-#editor {
-  flex:1;
-  padding:24px;
-  background:#fff;
-  outline:none;
-  overflow:auto;
-}
+  /* AI PANEL */
+  #aiPanel {
+    width:420px;
+    border-left:1px solid var(--line);
+    background:var(--panel);
+    display:flex;
+    flex-direction:column;
+    min-width:320px;
+    max-width:520px;
+  }
+  #aiPanelHeader{
+    padding:12px 12px 10px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  #aiPanelHeader .title{
+    font-weight:700;
+    font-size:14px;
+  }
+  #aiPanelHeader .sub{
+    font-size:12px;
+    color:var(--muted);
+  }
+  #aiPanelHeader .grow{ flex:1; }
+  #aiPanelHeader button{
+    padding:7px 10px;
+    border:0;
+    border-radius:10px;
+    background:#eef1f7;
+    cursor:pointer;
+  }
+  #aiPanelHeader button:hover{ filter:brightness(0.98); }
+  #aiPanelHeader .apply{ background:var(--ok); color:#fff; }
+  #aiPanelHeader .reject{ background:var(--danger); color:#fff; }
+  #aiPanelHeader button:disabled{ opacity:.5; cursor:not-allowed; }
 
-#editor:focus { outline:none; }
+  #aiOutput {
+    flex:1;
+    padding:14px 14px 18px;
+    overflow:auto;
+    font-family: ui-serif, Georgia, "Times New Roman", serif;
+    line-height:1.65;
+  }
+  #aiOutput .placeholder{
+    color:var(--muted);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    font-size:13px;
+  }
+  #aiStatusBar{
+    border-top:1px solid var(--line);
+    padding:10px 12px;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    color:var(--muted);
+    font-size:12px;
+  }
+  .pill{
+    padding:4px 8px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:#333;
+    font-size:12px;
+  }
+  .pill.brand{ border-color:rgba(75,104,255,.35); color:#2b3cff; }
+  .pill.warn{ border-color:rgba(225,29,72,.25); color:#b01236; }
 
-#chapterTitle {
-  width:100%;
-  padding:10px;
-  font-size:20px;
-  border:none;
-  border-bottom:1px solid #ccc;
-}
+  /* SETTINGS MODAL */
+  .modal {
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.5);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+  }
+  .modal.active { display:flex; }
+  .modal-box {
+    background:#fff;
+    padding:18px;
+    width:min(420px, 92vw);
+    border-radius:14px;
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
+  }
+  .modal-box h3{ margin:0 0 12px; }
+  .modal-box .row{ margin:10px 0; }
+  .modal-box input{
+    width:100%;
+    padding:10px;
+    border:1px solid var(--line);
+    border-radius:12px;
+  }
+  .modal-box .actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    margin-top:14px;
+  }
+  .modal-box .actions button{
+    padding:10px 12px;
+    border:0;
+    border-radius:12px;
+    cursor:pointer;
+  }
+  .modal-box .actions .save{ background:var(--brand); color:#fff; }
+  .modal-box .actions .cancel{ background:#eef1f7; }
 
-select, input[type=text] { padding:6px; }
-button { cursor:pointer; }
-
-#saveStatus { margin-left:auto; font-size:12px; color:#555; }
-
-.modal {
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.5);
-  display:none;
-  align-items:center;
-  justify-content:center;
-}
-.modal.active { display:flex; }
-.modal-box {
-  background:#fff;
-  padding:20px;
-  width:360px;
-  border-radius:8px;
-}
+  /* Mobile: hide AI panel by default */
+  @media (max-width: 980px){
+    #aiPanel{ display:none; }
+  }
 </style>
 </head>
+
 <body>
 
 <header>
   <strong>📘 Book Maker</strong>
 
+  <button class="ghost" onclick="toggleAiPanel()">🧠 AI Panel</button>
   <button onclick="addChapter()">➕ Chapter</button>
   <button onclick="undo()">↩ Undo</button>
 
-  <button onclick="aiRewrite()">✍ Rewrite</button>
-  <button onclick="aiExpand()">➕ Expand</button>
-  <button onclick="aiSummarize()">🧠 Summarize</button>
-  <button onclick="aiContinue()">➡ Continue</button>
+  <button class="primary" onclick="aiRewrite()">Rewrite</button>
+  <button class="primary" onclick="aiExpand()">Expand</button>
+  <button class="primary" onclick="aiSummarize()">Summarize</button>
+  <button class="primary" onclick="aiContinue()">Continue</button>
 
   <button onclick="openSettings()">⚙ Settings</button>
 
@@ -112,48 +237,74 @@ button { cursor:pointer; }
 </header>
 
 <div id="layout">
-  <div id="sidebar">
+  <aside id="sidebar">
     <h3>Chapters</h3>
     <div id="chapterList"></div>
-  </div>
+  </aside>
 
-  <div id="main">
+  <main id="main">
     <input id="chapterTitle" placeholder="Chapter title..." />
 
     <div id="toolbar">
-      Mode:
-      <select id="aiMode">
-        <option value="rewrite">Rewrite</option>
-        <option value="expand">Expand</option>
-        <option value="summarize">Summarize</option>
-        <option value="continue">Continue</option>
-      </select>
-
-      Template:
-      <select id="aiTemplate">
-        <option value="default">Default</option>
-        <option value="dramatic">Dramatic</option>
-        <option value="concise">Concise</option>
-        <option value="descriptive">Descriptive</option>
-      </select>
-
-      Model:
-      <select id="aiModel">
-        <option value="gpt-4o-mini">gpt-4o-mini</option>
-        <option value="gpt-4.1-mini">gpt-4.1-mini</option>
-        <option value="gpt-4.1">gpt-4.1</option>
-      </select>
-
-      <label>
-        <input type="checkbox" id="aiStream" checked />
-        Streaming
+      <label>Mode
+        <select id="aiMode">
+          <option value="rewrite">Rewrite</option>
+          <option value="expand">Expand</option>
+          <option value="summarize">Summarize</option>
+          <option value="continue">Continue</option>
+        </select>
       </label>
 
-      <span style="margin-left:auto">Total words: <span id="totalWords">0</span></span>
+      <label>Template
+        <select id="aiTemplate">
+          <option value="default">Default</option>
+          <option value="dramatic">Dramatic</option>
+          <option value="concise">Concise</option>
+          <option value="descriptive">Descriptive</option>
+          <option value="dialogue">Punch up dialogue</option>
+        </select>
+      </label>
+
+      <label>Model
+        <select id="aiModel">
+          <option value="gpt-4o-mini">gpt-4o-mini</option>
+          <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+          <option value="gpt-4.1">gpt-4.1</option>
+        </select>
+      </label>
+
+      <label><input type="checkbox" id="aiStream" checked /> Streaming</label>
+
+      <div class="spacer">Total words: <span id="totalWords">0</span></div>
     </div>
 
-    <div id="editor" contenteditable="true"></div>
-  </div>
+    <div id="editorWrap">
+      <div id="editor" contenteditable="true"></div>
+
+      <!-- AI Preview Panel -->
+      <section id="aiPanel">
+        <div id="aiPanelHeader">
+          <div>
+            <div class="title">AI Preview</div>
+            <div class="sub" id="aiTargetLabel">No request yet</div>
+          </div>
+          <div class="grow"></div>
+          <button class="reject" id="aiRejectBtn" onclick="aiReject()" disabled>Reject</button>
+          <button class="apply" id="aiApplyBtn" onclick="aiApply()" disabled>Apply</button>
+        </div>
+
+        <div id="aiOutput">
+          <div class="placeholder">Run an AI action to preview changes here. Then click <b>Apply</b> or <b>Reject</b>.</div>
+        </div>
+
+        <div id="aiStatusBar">
+          <span class="pill brand" id="aiStatusPill">Idle</span>
+          <span class="pill" id="aiWherePill">Target: —</span>
+          <span class="pill" id="aiModePill">Mode: —</span>
+        </div>
+      </section>
+    </div>
+  </main>
 </div>
 
 <!-- SETTINGS MODAL -->
@@ -161,19 +312,19 @@ button { cursor:pointer; }
   <div class="modal-box">
     <h3>AI Settings</h3>
 
-    <div>
+    <div class="row">
       <label>Worker Endpoint</label><br>
-      <input id="aiEndpoint" style="width:100%" placeholder="https://bookmaker-ai....workers.dev">
+      <input id="aiEndpoint" placeholder="https://your-worker.workers.dev" />
     </div>
 
-    <div style="margin-top:10px">
-      <label>Access Token</label><br>
-      <input id="aiToken" style="width:100%" placeholder="your BOOKMAKER_TOKEN">
+    <div class="row">
+      <label>Access Token (BOOKMAKER_TOKEN)</label><br>
+      <input id="aiToken" placeholder="your-secret-token" />
     </div>
 
-    <div style="margin-top:16px; text-align:right">
-      <button onclick="closeSettings()">Cancel</button>
-      <button onclick="saveSettings()">Save</button>
+    <div class="actions">
+      <button class="cancel" onclick="closeSettings()">Cancel</button>
+      <button class="save" onclick="saveSettings()">Save</button>
     </div>
   </div>
 </div>
@@ -181,12 +332,13 @@ button { cursor:pointer; }
 <script src="app.js"></script>
 
 <script>
-function openSettings() {
-  document.getElementById("settingsModal").classList.add("active");
-}
-function closeSettings() {
-  document.getElementById("settingsModal").classList.remove("active");
-}
+  function openSettings(){ document.getElementById("settingsModal").classList.add("active"); }
+  function closeSettings(){ document.getElementById("settingsModal").classList.remove("active"); }
+  function toggleAiPanel(){
+    const panel = document.getElementById("aiPanel");
+    const isHidden = getComputedStyle(panel).display === "none";
+    panel.style.display = isHidden ? "flex" : "none";
+  }
 </script>
 
 </body>
