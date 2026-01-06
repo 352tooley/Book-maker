@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Book Maker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<!-- DOMPurify -->
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+
+<!-- diff-match-patch BROWSER build -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
+
+<!-- Mammoth DOCX parser -->
+<script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
+
+<!-- Sortable -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+<script>
+console.log("Mammoth loaded:", typeof window.mammoth);
+console.log("diff_match_patch loaded:", typeof window.diff_match_patch);
+</script>
+
+<style>
+body { margin:0; font-family: system-ui, Arial; background:#f5f6f8; }
+header { background:#111; color:#fff; padding:10px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+header strong { font-size:18px; }
+header button, header select { padding:6px 10px; border-radius:8px; border:0; background:#2a2c31; color:#fff; cursor:pointer; }
+header .primary { background:#4b68ff; }
+#saveStatus { margin-left:auto; font-size:12px; opacity:.8; }
+
+#layout { display:flex; height:calc(100vh - 56px); }
+
+#sidebar {
+  width:260px;
+  background:#1e1f22;
+  color:#fff;
+  padding:10px;
+  overflow:auto;
+}
+.chapter {
+  background:#2a2c31;
+  margin-bottom:6px;
+  padding:8px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.chapter.active { background:#4b68ff; }
+
+#main { flex:1; display:flex; flex-direction:column; }
+
+#chapterTitle {
+  width:100%;
+  padding:10px;
+  font-size:20px;
+  border:none;
+  border-bottom:1px solid #ccc;
+}
+
+#editor {
+  flex:1;
+  padding:24px;
+  background:#fff;
+  outline:none;
+  overflow:auto;
+}
+
+ins { background:#d1fae5; }
+del { background:#fee2e2; text-decoration:line-through; }
+
+.scene-break { border:none; text-align:center; margin:2em 0; }
+.scene-break::after { content:"* * *"; }
+
+.modal { position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:1000; }
+.modal.active { display:flex; }
+.modal-box { background:#fff; padding:20px; width:380px; border-radius:8px; }
+.modal-box input { width:100%; padding:6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <strong>📘 Book Maker</strong>
+  <button onclick="addChapter()">➕ Chapter</button>
+
+  <input type="file" id="docxInput" accept=".docx" style="display:none" />
+  <button onclick="document.getElementById('docxInput').click()">📄 Import DOCX</button>
+
+  <button onclick="insertSceneBreak()">✴ Scene Break</button>
+  <button onclick="undo()">↩ Undo</button>
+
+  <button class="primary" onclick="aiRewrite()">Rewrite</button>
+  <button class="primary" onclick="aiExpand()">Expand</button>
+  <button class="primary" onclick="aiSummarize()">Summarize</button>
+  <button class="primary" onclick="aiContinue()">Continue</button>
+
+  <button onclick="aiApply()">✅ Apply</button>
+  <button onclick="aiReject()">❌ Reject</button>
+  <button onclick="openSettings()">⚙ Settings</button>
+
+  <span id="saveStatus">Saved ✓</span>
+</header>
+
+<div id="layout">
+  <div id="sidebar">
+    <div id="chapterList"></div>
+  </div>
+  <div id="main">
+    <input id="chapterTitle" placeholder="Chapter title..." />
+    <div id="editor" contenteditable="true"></div>
+  </div>
+</div>
+
+<div class="modal" id="settingsModal">
+  <div class="modal-box">
+    <h3>AI Settings</h3>
+    <input id="aiEndpoint" placeholder="https://xxxx.workers.dev"><br><br>
+    <input id="aiToken" placeholder="BOOKMAKER_TOKEN"><br><br>
+    <button onclick="closeSettings()">Cancel</button>
+    <button onclick="saveSettings()">Save</button>
+  </div>
+</div>
+
+<script>
+function openSettings(){ document.getElementById("settingsModal").classList.add("active"); }
+function closeSettings(){ document.getElementById("settingsModal").classList.remove("active"); }
+</script>
+
+<script src="app.js"></script>
+</body>
+</html>
