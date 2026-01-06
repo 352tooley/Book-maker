@@ -1,9 +1,9 @@
 /* ===========================
-   Book Maker – app.js
+   Book Maker – app.js (FULL)
    =========================== */
 
-const STATE_KEY = "bookmaker_state_v2";
-const BACKUP_KEY = "bookmaker_backup_v2";
+const STATE_KEY = "bookmaker_state_v3";
+const BACKUP_KEY = "bookmaker_backup_v3";
 
 let state = {
   chapters: [],
@@ -13,7 +13,11 @@ let state = {
   todayWords: 0,
   settings: {
     aiEndpoint: "",
-    aiToken: ""
+    aiToken: "",
+    mode: "rewrite",
+    template: "default",
+    model: "gpt-4o-mini",
+    stream: true
   }
 };
 
@@ -22,19 +26,24 @@ const $ = (id) => document.getElementById(id);
 const uid = () => crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random();
 
 function sanitize(html) {
-  return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+  if (window.DOMPurify) {
+    return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+  }
+  return html;
 }
 
 /* ---------- Persistence ---------- */
 function saveState(showStatus = true) {
-  if (showStatus) setSaveStatus("Saving…");
+  if (showStatus && $("saveStatus")) $("saveStatus").textContent = "Saving…";
   localStorage.setItem(STATE_KEY, JSON.stringify(state));
-  if (showStatus) setTimeout(() => setSaveStatus("Saved ✓"), 300);
+  if (showStatus && $("saveStatus")) {
+    setTimeout(() => $("saveStatus").textContent = "Saved ✓", 300);
+  }
 }
 
 function loadState() {
   const raw = localStorage.getItem(STATE_KEY);
-  if (raw) state = JSON.parse(raw);
+  if (raw) state = { ...state, ...JSON.parse(raw) };
 
   if (!state.chapters.length) {
     addChapter("Chapter 1", true);
@@ -43,22 +52,19 @@ function loadState() {
   renderChapters();
   switchChapter(state.currentChapterId || state.chapters[0].id);
 
-  // Load settings if present
-  if (state.settings && state.settings.aiEndpoint) {
-    $("aiEndpoint").value = state.settings.aiEndpoint;
-    $("aiToken").value = state.settings.aiToken;
-  }
+  // Load settings UI if present
+  if ($("aiEndpoint")) $("aiEndpoint").value = state.settings.aiEndpoint || "";
+  if ($("aiToken")) $("aiToken").value = state.settings.aiToken || "";
+  if ($("aiMode")) $("aiMode").value = state.settings.mode || "rewrite";
+  if ($("aiTemplate")) $("aiTemplate").value = state.settings.template || "default";
+  if ($("aiModel")) $("aiModel").value = state.settings.model || "gpt-4o-mini";
+  if ($("aiStream")) $("aiStream").checked = !!state.settings.stream;
 }
 
 /* Auto-backup every 5 minutes */
 setInterval(() => {
   localStorage.setItem(BACKUP_KEY, JSON.stringify(state));
 }, 5 * 60 * 1000);
-
-/* ---------- Save Indicator ---------- */
-function setSaveStatus(text) {
-  $("saveStatus").textContent = text;
-}
 
 /* ---------- Chapters ---------- */
 function addChapter(title = "New Chapter", silent = false) {
@@ -76,7 +82,7 @@ function addChapter(title = "New Chapter", silent = false) {
 }
 
 function deleteChapter(id) {
-  if (!confirm("Delete this chapter? This cannot be undone.")) return;
+  if (!confirm("Delete this chapter?")) return;
   state.chapters = state.chapters.filter(c => c.id !== id);
   state.currentChapterId = state.chapters[0]?.id || null;
   renderChapters();
@@ -85,6 +91,7 @@ function deleteChapter(id) {
 }
 
 function renderChapters() {
+  if (!$("chapterList")) return;
   $("chapterList").innerHTML = state.chapters.map(c => `
     <div class="chapter ${c.id === state.currentChapterId ? "active" : ""}"
       onclick="switchChapter('${c.id}')">
@@ -100,8 +107,8 @@ function switchChapter(id) {
   const ch = state.chapters.find(c => c.id === id);
   if (!ch) return;
   state.currentChapterId = id;
-  $("chapterTitle").value = ch.title;
-  $("editor").innerHTML = ch.content;
+  if ($("chapterTitle")) $("chapterTitle").value = ch.title;
+  if ($("editor")) $("editor").innerHTML = ch.content;
   renderChapters();
 }
 
@@ -119,23 +126,26 @@ function saveCurrentChapter(showStatus = true) {
   saveState(showStatus);
 }
 
-$("editor").addEventListener("input", () => {
-  setSaveStatus("Typing…");
-  clearTimeout(window._saveTimer);
-  window._saveTimer = setTimeout(() => saveCurrentChapter(), 600);
-});
+if ($("editor")) {
+  $("editor").addEventListener("input", () => {
+    if ($("saveStatus")) $("saveStatus").textContent = "Typing…";
+    clearTimeout(window._saveTimer);
+    window._saveTimer = setTimeout(() => saveCurrentChapter(), 600);
+  });
 
-$("chapterTitle").addEventListener("input", () => {
-  setSaveStatus("Typing…");
-  clearTimeout(window._saveTimer);
-  window._saveTimer = setTimeout(() => saveCurrentChapter(), 600);
-});
+  $("editor").addEventListener("paste", e => {
+    e.preventDefault();
+    document.execCommand("insertText", false, e.clipboardData.getData("text/plain"));
+  });
+}
 
-/* Paste as plain text */
-$("editor").addEventListener("paste", e => {
-  e.preventDefault();
-  document.execCommand("insertText", false, e.clipboardData.getData("text/plain"));
-});
+if ($("chapterTitle")) {
+  $("chapterTitle").addEventListener("input", () => {
+    if ($("saveStatus")) $("saveStatus").textContent = "Typing…";
+    clearTimeout(window._saveTimer);
+    window._saveTimer = setTimeout(() => saveCurrentChapter(), 600);
+  });
+}
 
 /* ---------- Word Counts ---------- */
 function countWords(html) {
@@ -144,7 +154,7 @@ function countWords(html) {
 
 function updateWordCounts() {
   const total = state.chapters.reduce((s, c) => s + c.wordCount, 0);
-  $("totalWords").textContent = total.toLocaleString();
+  if ($("totalWords")) $("totalWords").textContent = total.toLocaleString();
 
   const today = new Date().toDateString();
   if (today !== state.today) {
@@ -158,372 +168,156 @@ function updateWordCounts() {
   state.lastTotalWords = total;
 }
 
-/* ---------- Scene Break ---------- */
-function insertSceneBreak() {
-  document.execCommand("insertHTML", false, `<hr class="scene-break">`);
-  saveCurrentChapter();
+/* ---------- Undo ---------- */
+let undoStack = [];
+
+function saveUndoPoint() {
+  const ch = state.chapters.find(c => c.id === state.currentChapterId);
+  if (!ch) return;
+  undoStack.push({ chapterId: ch.id, content: ch.content });
+  if (undoStack.length > 10) undoStack.shift();
 }
 
-/* ---------- Search & Replace ---------- */
-function openSearch() {
-  $("searchModal").classList.add("active");
+function undo() {
+  const last = undoStack.pop();
+  if (!last) return alert("Nothing to undo");
+  const ch = state.chapters.find(c => c.id === last.chapterId);
+  if (ch) {
+    ch.content = last.content;
+    ch.wordCount = countWords(last.content);
+    switchChapter(ch.id);
+    saveState();
+  }
 }
 
-function closeSearch() {
-  $("searchModal").classList.remove("active");
-}
-
-function runReplace(all = false) {
-  const find = $("searchFind").value;
-  const replace = $("searchReplace").value;
-  if (!find) return;
-
-  if (all && !confirm("Replace ALL occurrences in ALL chapters?")) return;
-
-  state.chapters.forEach(ch => {
-    if (!all && ch.id !== state.currentChapterId) return;
-    ch.content = ch.content.split(find).join(replace);
-    ch.wordCount = countWords(ch.content);
-  });
-
-  switchChapter(state.currentChapterId);
-  saveState();
-  closeSearch();
-}
-
-/* ---------- AI Settings ---------- */
-function openSettings() {
-  $("settingsModal").classList.add("active");
-}
-
-function closeSettings() {
-  $("settingsModal").classList.remove("active");
-}
-
+/* ---------- Settings ---------- */
 function saveSettings() {
-  state.settings.aiEndpoint = $("aiEndpoint").value;
-  state.settings.aiToken = $("aiToken").value;
+  state.settings.aiEndpoint = $("aiEndpoint").value.trim();
+  state.settings.aiToken = $("aiToken").value.trim();
+  state.settings.mode = $("aiMode").value;
+  state.settings.template = $("aiTemplate").value;
+  state.settings.model = $("aiModel").value;
+  state.settings.stream = $("aiStream").checked;
   saveState();
-  closeSettings();
-  alert("Settings saved!");
+  alert("Settings saved");
 }
 
-/* ---------- AI Actions ---------- */
-async function aiRewrite() {
-  await aiAction("Rewrite this text to improve clarity and flow", false);
-}
-
-async function aiExpand() {
-  await aiAction("Expand this text with more detail and description", false);
-}
-
-async function aiContinue() {
-  await aiAction("Continue writing from where this text ends", true);
-}
-
-async function aiAction(instruction, append = false) {
+/* ---------- AI CORE ---------- */
+async function aiRun() {
   const endpoint = state.settings.aiEndpoint;
   const token = state.settings.aiToken;
 
   if (!endpoint || !token) {
-    alert("Please configure AI settings first (click ⚙ Settings)");
+    alert("Configure AI settings first.");
     return;
   }
 
-  const selection = window.getSelection();
-  const text = selection.toString() || $("editor").innerText;
+  // Get text
+  const sel = window.getSelection();
+  let text = sel ? sel.toString() : "";
+  if (!text || !text.trim()) text = $("editor").innerText || "";
+  if (!text.trim()) return alert("Editor is empty.");
 
-  if (!text.trim()) {
-    alert("No text selected or editor is empty");
-    return;
-  }
-
-  // Save undo point
   saveUndoPoint();
 
-  setSaveStatus("AI processing…");
+  const mode = state.settings.mode;
+  const template = state.settings.template;
+  const model = state.settings.model;
+  const stream = state.settings.stream;
 
-  try {
+  const body = {
+    instruction: mode === "rewrite" ? "Rewrite this text" :
+                 mode === "expand" ? "Expand this text" :
+                 mode === "summarize" ? "Summarize this text" :
+                 "Continue writing",
+    text,
+    mode,
+    template,
+    model,
+    chapter: $("editor").innerText,
+    stream
+  };
+
+  if ($("saveStatus")) $("saveStatus").textContent = "AI working…";
+
+  if (!stream) {
+    // Non-streaming
     const resp = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-BookMaker-Token": token
       },
-      body: JSON.stringify({ instruction, text })
+      body: JSON.stringify(body)
     });
-
-    if (resp.status === 401) {
-      alert("AI not authorized. Check your token.");
-      setSaveStatus("Saved ✓");
-      return;
-    }
-
-    if (resp.status === 429) {
-      alert("Daily AI limit reached (30 requests/day)");
-      setSaveStatus("Saved ✓");
-      return;
-    }
-
-    if (!resp.ok) {
-      throw new Error(`AI request failed: ${resp.status}`);
-    }
 
     const data = await resp.json();
     const clean = sanitize(data.text || "");
 
-    if (append) {
-      document.execCommand("insertHTML", false, `<p>${clean}</p>`);
-    } else if (selection.toString()) {
-      document.execCommand("insertHTML", false, clean);
-    } else {
-      $("editor").innerHTML += `<p>${clean}</p>`;
-    }
-
+    document.execCommand("insertHTML", false, `<p>${clean}</p>`);
     saveCurrentChapter();
-  } catch (err) {
-    alert("AI error: " + err.message);
-    setSaveStatus("Saved ✓");
-  }
-}
-
-/* ---------- Undo History ---------- */
-let undoStack = [];
-
-function saveUndoPoint() {
-  const ch = state.chapters.find(c => c.id === state.currentChapterId);
-  if (!ch) return;
-
-  undoStack.push({
-    chapterId: ch.id,
-    content: ch.content
-  });
-
-  // Keep only last 10 undo points
-  if (undoStack.length > 10) undoStack.shift();
-}
-
-function undo() {
-  if (undoStack.length === 0) {
-    alert("No undo history");
     return;
   }
 
-  const lastState = undoStack.pop();
-  const ch = state.chapters.find(c => c.id === lastState.chapterId);
+  // Streaming
+  const resp = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-BookMaker-Token": token,
+      "Accept": "text/event-stream"
+    },
+    body: JSON.stringify(body)
+  });
 
-  if (ch) {
-    ch.content = lastState.content;
-    ch.wordCount = countWords(lastState.content);
-    switchChapter(ch.id);
-    saveState();
+  if (!resp.body) {
+    alert("Streaming failed");
+    return;
   }
-}
 
-/* ---------- Export JSON ---------- */
-function exportJSON() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-  saveAs(blob, "book-backup.json");
-}
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
 
-/* ---------- Export EPUB ---------- */
-function exportEPUB() {
-  const bookTitle = prompt("Book title:", "My Book");
-  if (!bookTitle) return;
+  let insertPos = document.createElement("span");
+  insertPos.id = "ai-stream-anchor";
+  $("editor").appendChild(insertPos);
 
-  const author = prompt("Author name:", "Anonymous");
-  if (!author) return;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
 
-  // Create EPUB structure
-  const uuid = uid();
-  const timestamp = new Date().toISOString();
+    buffer += decoder.decode(value, { stream: true });
 
-  // Container
-  const container = `<?xml version="1.0"?>
-<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-  <rootfiles>
-    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
-  </rootfiles>
-</container>`;
+    let idx;
+    while ((idx = buffer.indexOf("\n\n")) !== -1) {
+      const chunk = buffer.slice(0, idx);
+      buffer = buffer.slice(idx + 2);
 
-  // Content OPF
-  const manifestItems = state.chapters.map((ch, i) =>
-    `    <item id="chapter${i+1}" href="chapter${i+1}.xhtml" media-type="application/xhtml+xml"/>`
-  ).join('\n');
+      const line = chunk.split("\n").find(l => l.startsWith("data:"));
+      if (!line) continue;
 
-  const spineItems = state.chapters.map((ch, i) =>
-    `    <itemref idref="chapter${i+1}"/>`
-  ).join('\n');
+      const payload = line.slice(5).trim();
+      if (!payload) continue;
 
-  const contentOpf = `<?xml version="1.0" encoding="UTF-8"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:identifier id="uid">urn:uuid:${uuid}</dc:identifier>
-    <dc:title>${escapeXml(bookTitle)}</dc:title>
-    <dc:creator>${escapeXml(author)}</dc:creator>
-    <dc:language>en</dc:language>
-    <meta property="dcterms:modified">${timestamp}</meta>
-  </metadata>
-  <manifest>
-    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
-    <item id="stylesheet" href="stylesheet.css" media-type="text/css"/>
-${manifestItems}
-  </manifest>
-  <spine>
-${spineItems}
-  </spine>
-</package>`;
+      let evt;
+      try { evt = JSON.parse(payload); } catch { continue; }
 
-  // Navigation
-  const navItems = state.chapters.map((ch, i) =>
-    `        <li><a href="chapter${i+1}.xhtml">${escapeXml(ch.title)}</a></li>`
-  ).join('\n');
-
-  const nav = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
-<head>
-  <title>Navigation</title>
-</head>
-<body>
-  <nav epub:type="toc">
-    <h1>Table of Contents</h1>
-    <ol>
-${navItems}
-    </ol>
-  </nav>
-</body>
-</html>`;
-
-  // Stylesheet
-  const stylesheet = `body {
-  font-family: Georgia, serif;
-  line-height: 1.6;
-  margin: 2em;
-}
-h1 {
-  font-size: 2em;
-  margin: 1em 0 0.5em;
-}
-p {
-  margin: 1em 0;
-  text-indent: 1.5em;
-}
-hr.scene-break {
-  border: none;
-  text-align: center;
-  margin: 2em 0;
-}
-hr.scene-break::after {
-  content: "* * *";
-}`;
-
-  // Create ZIP
-  const zip = new JSZip();
-  zip.file("mimetype", "application/epub+zip");
-  zip.file("META-INF/container.xml", container);
-  zip.file("OEBPS/content.opf", contentOpf);
-  zip.file("OEBPS/nav.xhtml", nav);
-  zip.file("OEBPS/stylesheet.css", stylesheet);
-
-  // Add chapters
-  state.chapters.forEach((ch, i) => {
-    const content = ch.content.replace(/<hr class="scene-break">/g, '<hr class="scene-break"/>');
-
-    const chapter = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <title>${escapeXml(ch.title)}</title>
-  <link rel="stylesheet" href="stylesheet.css"/>
-</head>
-<body>
-  <h1>${escapeXml(ch.title)}</h1>
-  ${content}
-</body>
-</html>`;
-
-    zip.file(`OEBPS/chapter${i+1}.xhtml`, chapter);
-  });
-
-  // Generate and download
-  zip.generateAsync({ type: "blob" }).then(blob => {
-    saveAs(blob, `${bookTitle}.epub`);
-  });
-}
-
-function escapeXml(str) {
-  return str.replace(/[<>&'"]/g, c => ({
-    '<': '&lt;',
-    '>': '&gt;',
-    '&': '&amp;',
-    "'": '&apos;',
-    '"': '&quot;'
-  })[c]);
-}
-
-/* ---------- Export PDF ---------- */
-async function exportPDF() {
-  const bookTitle = prompt("Book title:", "My Book");
-  if (!bookTitle) return;
-
-  // Build HTML for Paged.js
-  let html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>${bookTitle}</title>
-  <script src="https://unpkg.com/pagedjs@0.4.3/dist/paged.polyfill.js"></script>
-  <style>
-    @page {
-      size: 6in 9in;
-      margin: 0.75in;
+      if (evt.delta) {
+        insertPos.insertAdjacentText("beforebegin", evt.delta);
+      }
     }
-    body {
-      font-family: Georgia, serif;
-      font-size: 12pt;
-      line-height: 1.6;
-    }
-    h1 {
-      font-size: 20pt;
-      page-break-before: always;
-      margin-top: 0;
-    }
-    h1:first-of-type {
-      page-break-before: avoid;
-    }
-    p {
-      margin: 0 0 1em 0;
-      text-indent: 1.5em;
-    }
-    hr.scene-break {
-      border: none;
-      text-align: center;
-      margin: 2em 0;
-    }
-    hr.scene-break::after {
-      content: "* * *";
-    }
-  </style>
-</head>
-<body>`;
+  }
 
-  state.chapters.forEach(ch => {
-    html += `\n  <h1>${ch.title}</h1>\n  ${ch.content}\n`;
-  });
-
-  html += `</body>
-</html>`;
-
-  // Open in new window for print
-  const win = window.open();
-  win.document.write(html);
-  win.document.close();
-
-  setTimeout(() => {
-    alert("PDF preview opened. Use your browser's Print → Save as PDF");
-  }, 1000);
+  insertPos.remove();
+  saveCurrentChapter();
 }
+
+/* ---------- Button Hooks ---------- */
+function aiRewrite() { state.settings.mode = "rewrite"; aiRun(); }
+function aiExpand() { state.settings.mode = "expand"; aiRun(); }
+function aiSummarize() { state.settings.mode = "summarize"; aiRun(); }
+function aiContinue() { state.settings.mode = "continue"; aiRun(); }
 
 /* ---------- Init ---------- */
 window.onload = loadState;
