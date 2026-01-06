@@ -1,13 +1,13 @@
 /* ===========================
-   Book Maker – app.js (PHASE 1 COMPLETE)
-   - Replace-in-place (selection or whole chapter)
-   - AI Preview panel (streaming)
-   - Accept / Reject
+   Book Maker – app.js (PHASE 2: DIFF VIEW)
+   - AI Preview panel + Diff tab
+   - Word/phrase diff highlighting via diff-match-patch
+   - Apply/Reject
    - Undo-safe AI apply
    =========================== */
 
-const STATE_KEY = "bookmaker_state_v4";
-const BACKUP_KEY = "bookmaker_backup_v4";
+const STATE_KEY = "bookmaker_state_v5";
+const BACKUP_KEY = "bookmaker_backup_v5";
 
 let state = {
   chapters: [],
@@ -34,6 +34,12 @@ function sanitize(html) {
   return html;
 }
 
+function escapeHtml(str) {
+  return String(str ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+  }[c]));
+}
+
 function setSaveStatus(text) {
   if ($("saveStatus")) $("saveStatus").textContent = text;
 }
@@ -44,6 +50,28 @@ function setAiStatus(text, tone = "idle") {
   pill.textContent = text;
   pill.className = "pill brand";
   if (tone === "warn") pill.className = "pill warn";
+}
+
+/* ---------- Tabs ---------- */
+function aiShowTab(which) {
+  const prevBtn = $("tabPreview");
+  const diffBtn = $("tabDiff");
+  const prev = $("aiPreview");
+  const diff = $("aiDiff");
+
+  if (!prevBtn || !diffBtn || !prev || !diff) return;
+
+  if (which === "diff") {
+    prevBtn.classList.remove("active");
+    diffBtn.classList.add("active");
+    prev.classList.remove("active");
+    diff.classList.add("active");
+  } else {
+    diffBtn.classList.remove("active");
+    prevBtn.classList.add("active");
+    diff.classList.remove("active");
+    prev.classList.add("active");
+  }
 }
 
 /* ---------- Persistence ---------- */
@@ -59,7 +87,6 @@ function loadState() {
 
   if (!state.chapters.length) addChapter("Chapter 1", true);
 
-  // Load UI settings
   if ($("aiEndpoint")) $("aiEndpoint").value = state.settings.aiEndpoint || "";
   if ($("aiToken")) $("aiToken").value = state.settings.aiToken || "";
   if ($("aiMode")) $("aiMode").value = state.settings.mode || "rewrite";
@@ -73,7 +100,7 @@ function loadState() {
   setSaveStatus("Saved ✓");
 }
 
-/* Auto-backup every 5 minutes */
+/* Auto-backup */
 setInterval(() => localStorage.setItem(BACKUP_KEY, JSON.stringify(state)), 5 * 60 * 1000);
 
 /* ---------- Chapters ---------- */
@@ -174,7 +201,7 @@ function updateWordCounts() {
   state.lastTotalWords = total;
 }
 
-/* ---------- Undo (undo-safe AI applies) ---------- */
+/* ---------- Undo ---------- */
 let undoStack = [];
 
 function saveUndoPoint() {
@@ -209,11 +236,11 @@ function saveSettings() {
   alert("Settings saved!");
 }
 
-/* Keep state synced with toolbar selectors */
+/* Sync state with toolbar */
 ["aiMode", "aiTemplate", "aiModel", "aiStream"].forEach(id => {
   const el = $(id);
   if (!el) return;
-  el.addEventListener(id === "aiStream" ? "change" : "change", () => {
+  el.addEventListener("change", () => {
     state.settings.mode = $("aiMode")?.value || state.settings.mode;
     state.settings.template = $("aiTemplate")?.value || state.settings.template;
     state.settings.model = $("aiModel")?.value || state.settings.model;
@@ -222,14 +249,15 @@ function saveSettings() {
   });
 });
 
-/* ---------- AI Preview + Apply/Reject ---------- */
+/* ---------- AI Session ---------- */
 let aiSession = {
   active: false,
-  target: "none",     // "selection" | "chapter" | "append"
+  target: "none",         // "selection" | "chapter" | "append"
   selectionText: "",
-  selectionRange: null, // range snapshot
-  outputText: "",       // plain text assembled
-  outputHtml: "",       // html version (for apply)
+  selectionRange: null,
+  sourceText: "",         // what we diff against
+  outputText: "",         // what AI produced (plain)
+  outputHtml: "",         // what we apply (html)
   mode: "rewrite",
   template: "default",
   model: "gpt-4o-mini"
@@ -240,17 +268,22 @@ function aiResetPanel() {
   aiSession.target = "none";
   aiSession.selectionText = "";
   aiSession.selectionRange = null;
+  aiSession.sourceText = "";
   aiSession.outputText = "";
   aiSession.outputHtml = "";
 
-  if ($("aiOutput")) $("aiOutput").innerHTML = `<div class="placeholder">Run an AI action to preview changes here. Then click <b>Apply</b> or <b>Reject</b>.</div>`;
+  if ($("aiPreview")) $("aiPreview").innerHTML = `<div class="placeholder">Run an AI action to preview changes here. Then click <b>Apply</b> or <b>Reject</b>.</div>`;
+  if ($("aiDiff")) $("aiDiff").innerHTML = `<div class="placeholder">Diff will appear here after the preview is ready.</div>`;
+
   if ($("aiApplyBtn")) $("aiApplyBtn").disabled = true;
   if ($("aiRejectBtn")) $("aiRejectBtn").disabled = true;
 
   if ($("aiTargetLabel")) $("aiTargetLabel").textContent = "No request yet";
   if ($("aiWherePill")) $("aiWherePill").textContent = "Target: —";
   if ($("aiModePill")) $("aiModePill").textContent = "Mode: —";
+
   setAiStatus("Idle");
+  aiShowTab("preview");
 }
 
 function aiSetPanelMeta() {
@@ -275,23 +308,16 @@ function aiApply() {
     return;
   }
 
-  // Save undo BEFORE applying
   saveUndoPoint();
 
-  // Apply based on target
   if (aiSession.target === "append") {
-    // Append to end of editor
     $("editor").insertAdjacentHTML("beforeend", aiSession.outputHtml);
   } else if (aiSession.target === "selection" && aiSession.selectionRange) {
-    // Restore range and replace contents
     const sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(aiSession.selectionRange);
-
-    // Replace selected content with HTML
     document.execCommand("insertHTML", false, aiSession.outputHtml);
   } else {
-    // Replace entire chapter
     $("editor").innerHTML = aiSession.outputHtml;
   }
 
@@ -301,7 +327,38 @@ function aiApply() {
   if ($("aiRejectBtn")) $("aiRejectBtn").disabled = true;
 }
 
-/* Convert plain text to safe HTML paragraphs */
+/* ---------- AI Actions ---------- */
+function aiRewrite() { state.settings.mode = "rewrite"; syncToolbarMode(); aiRun(); }
+function aiExpand() { state.settings.mode = "expand"; syncToolbarMode(); aiRun(); }
+function aiSummarize() { state.settings.mode = "summarize"; syncToolbarMode(); aiRun(); }
+function aiContinue() { state.settings.mode = "continue"; syncToolbarMode(); aiRun(); }
+
+function syncToolbarMode() {
+  if ($("aiMode")) $("aiMode").value = state.settings.mode;
+  saveState(false);
+}
+
+function captureSelectionRange() {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return null;
+  const range = sel.getRangeAt(0);
+
+  const editor = $("editor");
+  if (!editor) return null;
+
+  const common = range.commonAncestorContainer;
+  const node = common.nodeType === 3 ? common.parentNode : common;
+  if (!editor.contains(node)) return null;
+
+  return range.cloneRange();
+}
+
+function getSelectedText(range) {
+  if (!range) return "";
+  return range.toString() || "";
+}
+
+/* Convert plain text to safe HTML paragraphs for applying */
 function textToHtmlParagraphs(text) {
   const lines = String(text || "").replace(/\r/g, "").split("\n");
   const blocks = [];
@@ -320,42 +377,60 @@ function textToHtmlParagraphs(text) {
   return blocks.join("");
 }
 
-/* ---------- AI Actions (Preview-first) ---------- */
-function aiRewrite() { state.settings.mode = "rewrite"; syncToolbarMode(); aiRun(); }
-function aiExpand() { state.settings.mode = "expand"; syncToolbarMode(); aiRun(); }
-function aiSummarize() { state.settings.mode = "summarize"; syncToolbarMode(); aiRun(); }
-function aiContinue() { state.settings.mode = "continue"; syncToolbarMode(); aiRun(); }
-
-function syncToolbarMode() {
-  if ($("aiMode")) $("aiMode").value = state.settings.mode;
-  saveState(false);
+/* Robustly normalize worker outputs */
+function normalizeWorkerText(data) {
+  if (data && typeof data.text === "string") return data.text;
+  const maybe = data?.choices?.[0]?.message?.content;
+  if (typeof maybe === "string") return maybe;
+  if (typeof data?.output === "string") return data.output;
+  return typeof data === "string" ? data : JSON.stringify(data);
 }
 
-function captureSelectionRange() {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return null;
-  const range = sel.getRangeAt(0);
-  // Must be inside editor
-  const editor = $("editor");
-  if (!editor) return null;
-  const common = range.commonAncestorContainer;
-  if (!editor.contains(common.nodeType === 3 ? common.parentNode : common)) return null;
-  return range.cloneRange();
+/* ---------- Diff Rendering ---------- */
+function buildDiffHtml(beforeText, afterText) {
+  if (!window.diff_match_patch) {
+    return `<div class="placeholder">Diff library not loaded.</div>`;
+  }
+  const dmp = new diff_match_patch();
+  const diffs = dmp.diff_main(beforeText || "", afterText || "");
+  dmp.diff_cleanupSemantic(diffs);
+
+  // Render as HTML with <ins> and <del>
+  let html = `<div class="diffWrap">`;
+  for (const [op, data] of diffs) {
+    const safe = escapeHtml(data);
+    if (op === 0) html += safe;
+    if (op === 1) html += `<ins>${safe}</ins>`;
+    if (op === -1) html += `<del>${safe}</del>`;
+  }
+  html += `</div>`;
+
+  return sanitize(html);
 }
 
-function getSelectedText(range) {
-  if (!range) return "";
-  return range.toString() || "";
+function renderPreview(outText) {
+  if (!$("aiPreview")) return;
+  const html = sanitize(textToHtmlParagraphs(outText));
+  $("aiPreview").innerHTML = html || `<div class="placeholder">No output.</div>`;
 }
 
+function renderDiff(beforeText, afterText) {
+  if (!$("aiDiff")) return;
+  if (!beforeText && !afterText) {
+    $("aiDiff").innerHTML = `<div class="placeholder">Diff will appear here after the preview is ready.</div>`;
+    return;
+  }
+  $("aiDiff").innerHTML = buildDiffHtml(beforeText, afterText);
+}
+
+/* ---------- Core AI Runner (Preview-first + Diff) ---------- */
 async function aiRun() {
   const endpoint = (state.settings.aiEndpoint || "").trim();
   const token = (state.settings.aiToken || "").trim();
   if (!endpoint || !token) return alert("Configure AI settings first (⚙ Settings).");
-
   if (!$("editor")) return alert("Editor not found.");
 
-  // Ensure latest content saved
+  // Save current edits first
   saveCurrentChapter(false);
 
   aiResetPanel();
@@ -364,17 +439,14 @@ async function aiRun() {
   aiSession.template = state.settings.template || "default";
   aiSession.model = state.settings.model || "gpt-4o-mini";
 
-  // Determine target:
-  // - continue: append
-  // - else: selection if exists, else entire chapter
   const selRange = captureSelectionRange();
   const selText = getSelectedText(selRange);
 
   if (aiSession.mode === "continue") {
     aiSession.target = "append";
-  } else if (selText && selText.trim().length > 0) {
+  } else if (selText && selText.trim()) {
     aiSession.target = "selection";
-    aiSession.selectionRange = selRange; // keep snapshot for apply
+    aiSession.selectionRange = selRange;
     aiSession.selectionText = selText;
   } else {
     aiSession.target = "chapter";
@@ -382,22 +454,22 @@ async function aiRun() {
 
   aiSetPanelMeta();
 
-  // Text we send to AI:
   const chapterText = $("editor").innerText || "";
   const text = aiSession.target === "selection" ? aiSession.selectionText : chapterText;
-
   if (!text.trim()) return alert("Editor is empty.");
 
-  // Build instruction string (worker can use or ignore)
+  // What we diff against:
+  aiSession.sourceText = (aiSession.target === "append") ? "" : text;
+
   const instruction =
     aiSession.mode === "rewrite" ? "Rewrite this text to improve clarity, flow, and style." :
     aiSession.mode === "expand" ? "Expand this text with more sensory detail, vivid description, and specificity." :
     aiSession.mode === "summarize" ? "Summarize this text while preserving key facts and tone." :
     "Continue writing from where this text ends, matching the voice and pacing.";
 
-  // Update panel
   setAiStatus("Generating…");
-  if ($("aiOutput")) $("aiOutput").innerHTML = `<div class="placeholder">Generating preview…</div>`;
+  if ($("aiPreview")) $("aiPreview").innerHTML = `<div class="placeholder">Generating preview…</div>`;
+  if ($("aiDiff")) $("aiDiff").innerHTML = `<div class="placeholder">Diff will appear here after the preview is ready.</div>`;
 
   const payload = {
     instruction,
@@ -405,15 +477,12 @@ async function aiRun() {
     mode: aiSession.mode,
     template: aiSession.template,
     model: aiSession.model,
-    // chapter-aware context (worker can use this)
     chapter: chapterText,
     stream: !!state.settings.stream
   };
 
-  const wantsStream = !!state.settings.stream;
-
   try {
-    if (!wantsStream) {
+    if (!state.settings.stream) {
       const resp = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-BookMaker-Token": token },
@@ -425,19 +494,24 @@ async function aiRun() {
       if (!resp.ok) throw new Error(`AI request failed: ${resp.status} ${await resp.text()}`);
 
       const data = await resp.json();
-      // Expect { text: "..." } OR OpenAI-like response; handle both
       const outText = normalizeWorkerText(data);
 
       aiSession.outputText = outText;
-      aiSession.outputHtml = sanitize(textToHtmlParagraphs(outText));
+
+      // Apply content rules:
+      // - append: output becomes paragraphs to append
+      // - else: output becomes replacement html
+      const outHtml = sanitize(textToHtmlParagraphs(outText));
+      aiSession.outputHtml = outHtml;
 
       renderPreview(outText);
+      renderDiff(aiSession.sourceText, outText);
       enableApplyReject();
       setAiStatus("Preview ready");
       return;
     }
 
-    // STREAMING (SSE-like: data: {"delta":"..."}\n\n OR data: {"text":"..."}\n\n )
+    // STREAMING
     const resp = await fetch(endpoint, {
       method: "POST",
       headers: {
@@ -454,11 +528,17 @@ async function aiRun() {
     if (!resp.body) throw new Error("Streaming not supported by this response.");
 
     setAiStatus("Streaming…");
-    streamToPreview(resp.body);
+    await streamToPreview(resp.body);
+
+    // After streaming completes, build diff + enable apply
+    renderDiff(aiSession.sourceText, aiSession.outputText);
+    enableApplyReject();
+    setAiStatus("Preview ready");
 
   } catch (err) {
     setAiStatus("Error", "warn");
-    if ($("aiOutput")) $("aiOutput").innerHTML = `<div class="placeholder"><b>Error:</b> ${escapeHtml(err.message)}</div>`;
+    if ($("aiPreview")) $("aiPreview").innerHTML = `<div class="placeholder"><b>Error:</b> ${escapeHtml(err.message)}</div>`;
+    if ($("aiDiff")) $("aiDiff").innerHTML = `<div class="placeholder">Diff unavailable due to error.</div>`;
   }
 }
 
@@ -467,31 +547,7 @@ function enableApplyReject() {
   if ($("aiRejectBtn")) $("aiRejectBtn").disabled = false;
 }
 
-function renderPreview(outText) {
-  if (!$("aiOutput")) return;
-  // Show as readable paragraphs (not raw HTML apply version)
-  const html = textToHtmlParagraphs(outText);
-  $("aiOutput").innerHTML = sanitize(html);
-}
-
-/* Robustly normalize worker outputs */
-function normalizeWorkerText(data) {
-  // Preferred: { text: "..." }
-  if (data && typeof data.text === "string") return data.text;
-
-  // OpenAI chat completions style fallback:
-  // data.choices[0].message.content
-  const maybe = data?.choices?.[0]?.message?.content;
-  if (typeof maybe === "string") return maybe;
-
-  // Streaming final-style: { output: "..." }
-  if (typeof data?.output === "string") return data.output;
-
-  // Last resort: stringify
-  return typeof data === "string" ? data : JSON.stringify(data);
-}
-
-/* Stream handler: collects delta tokens into outputText */
+/* Stream handler: data: {"delta":"..."} */
 async function streamToPreview(readable) {
   const reader = readable.getReader();
   const decoder = new TextDecoder();
@@ -499,13 +555,13 @@ async function streamToPreview(readable) {
   let buffer = "";
   let assembled = "";
 
-  // Start with empty preview container
-  if ($("aiOutput")) $("aiOutput").innerHTML = "";
-  const outEl = $("aiOutput");
+  // Live preview as plain text while streaming
+  if ($("aiPreview")) $("aiPreview").innerHTML = "";
+  const outEl = $("aiPreview");
 
-  // We'll render progressively into a single <div> as plain text, then finalize to paragraphs.
   const live = document.createElement("div");
   live.style.whiteSpace = "pre-wrap";
+  live.style.wordWrap = "break-word";
   live.style.fontFamily = "ui-serif, Georgia, 'Times New Roman', serif";
   live.style.lineHeight = "1.65";
   outEl.appendChild(live);
@@ -525,26 +581,17 @@ async function streamToPreview(readable) {
       if (!line) continue;
 
       const payload = line.slice(5).trim();
-      if (!payload) continue;
-
-      // allow [DONE]
-      if (payload === "[DONE]") continue;
+      if (!payload || payload === "[DONE]") continue;
 
       let evt;
       try { evt = JSON.parse(payload); } catch { continue; }
 
-      // Preferred: { delta: "..." }
       if (typeof evt.delta === "string") {
         assembled += evt.delta;
         live.textContent = assembled;
-        continue;
-      }
-
-      // Alternate: { text: "..." } (replaces)
-      if (typeof evt.text === "string") {
+      } else if (typeof evt.text === "string") {
         assembled = evt.text;
         live.textContent = assembled;
-        continue;
       }
     }
   }
@@ -552,24 +599,15 @@ async function streamToPreview(readable) {
   aiSession.outputText = assembled;
   aiSession.outputHtml = sanitize(textToHtmlParagraphs(assembled));
 
-  // Finalize preview as paragraphs
+  // Finalize preview into paragraphs
   renderPreview(assembled);
-  enableApplyReject();
-  setAiStatus("Preview ready");
-}
-
-/* ---------- Helpers ---------- */
-function escapeHtml(str) {
-  return String(str ?? "").replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
-  }[c]));
 }
 
 /* ---------- Init ---------- */
 window.onload = () => {
   loadState();
-  // Default AI panel status
   aiResetPanel();
+  window.aiShowTab = aiShowTab; // ensure global for onclick
 };
 
 window.onbeforeunload = () => {
