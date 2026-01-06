@@ -1,74 +1,89 @@
 export default {
-  async fetch(request, env) {
-    // CORS headers
-    const corsHeaders = {
+  async fetch(request, env, ctx) {
+    const cors = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type, X-BookMaker-Token",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, X-BookMaker-Token",
     };
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
-
-    // Only allow POST
-    if (request.method !== "POST") {
-      return new Response("Method Not Allowed", { status: 405 });
-    }
+    if (request.method === "OPTIONS") return new Response(null, { headers: cors });
+    if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: cors });
 
     try {
-      // Check auth token
-      const token = request.headers.get("X-BookMaker-Token");
-      if (!token || token !== env.BOOKMAKER_TOKEN) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: corsHeaders }
-        );
+      // --- Auth ---
+      const token = request.headers.get("X-BookMaker-Token") || "";
+      if (!env.BOOKMAKER_TOKEN || token !== env.BOOKMAKER_TOKEN) {
+        return json({ error: "AI access not authorized" }, 401, cors);
       }
 
-      // Rate limiting by IP
-      const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-      const rateLimitKey = `ratelimit:${ip}:${today}`;
+      // --- Identify IP (best-effort) ---
+      const ip =
+        request.headers.get("cf-connecting-ip") ||
+        request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        "unknown";
 
-      const currentCount = await env.USAGE_KV.get(rateLimitKey);
-      const count = currentCount ? parseInt(currentCount) : 0;
+      // --- Rate limit: 30/day/IP (KV) ---
+      if (!env.BOOKMAKER_LIMITS) {
+        return json({ error: "Server misconfigured: BOOKMAKER_LIMITS missing" }, 500, cors);
+      }
+
+      const now = new Date();
+      const ymd = now.toISOString().slice(0, 10); // YYYY-MM-DD UTC
+      const limitKey = `ai:${ip}:${ymd}`;
+
+      const countRaw = await env.BOOKMAKER_LIMITS.get(limitKey);
+      const count = countRaw ? parseInt(countRaw, 10) : 0;
 
       if (count >= 30) {
-        return new Response(
-          JSON.stringify({ error: "Daily limit reached (30 requests/day)" }),
-          { status: 429, headers: corsHeaders }
-        );
+        return json({ error: "Daily AI limit reached" }, 429, cors);
       }
 
-      // Parse request
+      // TTL until end of UTC day
+      const endOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
+      const ttlSeconds = Math.max(60, Math.floor((endOfDay.getTime() - now.getTime()) / 1000));
+
+      await env.BOOKMAKER_LIMITS.put(limitKey, String(count + 1), { expirationTtl: ttlSeconds });
+
+      // --- Parse request body ---
       const body = await request.json();
-      const { model, instruction, text } = body;
+      const instruction = String(body.instruction || "").trim();
+      const text = String(body.text || "").trim();
+      const model = String(body.model || "gpt-5.2");
 
-      if (!text || !instruction) {
-        return new Response(
-          JSON.stringify({ error: "Missing text or instruction" }),
-          { status: 400, headers: corsHeaders }
-        );
+      if (!instruction || !text) {
+        return json({ error: "Missing instruction or text" }, 400, cors);
       }
 
-      // Call OpenAI
-      const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+      const charCount = text.length;
+
+      // --- Metrics (KV best-effort) ---
+      ctx.waitUntil(incrementKV(env.BOOKMAKER_LIMITS, "metrics:requests", 1));
+      ctx.waitUntil(incrementKV(env.BOOKMAKER_LIMITS, "metrics:chars", charCount));
+
+      console.log(JSON.stringify({ ip, ymd, count: count + 1, charCount, model }));
+
+      // --- OpenAI proxy (Responses API) ---
+      if (!env.OPENAI_API_KEY) {
+        return json({ error: "Server misconfigured: OPENAI_API_KEY missing" }, 500, cors);
+      }
+
+      const openaiRes = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
+          Authorization: `Bearer ${env.OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: model || "gpt-4",
-          messages: [
+          model,
+          input: [
             {
               role: "system",
-              content: "You are a professional book editor. Return only the rewritten text. No quotes. No commentary.",
+              content:
+                "You are a professional book editor. Return ONLY the rewritten content as clean HTML paragraphs (<p>…</p>). No markdown fences. No commentary.",
             },
             {
               role: "user",
-              content: `Instruction: ${instruction}\n\nText:\n${text}`,
+              content: `Instruction:\n${instruction}\n\nText:\n${text}`,
             },
           ],
           temperature: 0.7,
@@ -77,44 +92,47 @@ export default {
 
       if (!openaiRes.ok) {
         const errText = await openaiRes.text();
-        return new Response(
-          JSON.stringify({ error: errText }),
-          { status: openaiRes.status, headers: corsHeaders }
-        );
+        return json({ error: errText }, openaiRes.status, cors);
       }
 
       const data = await openaiRes.json();
-      const output = data?.choices?.[0]?.message?.content || "";
 
-      // Increment rate limit
-      await env.USAGE_KV.put(rateLimitKey, (count + 1).toString(), {
-        expirationTtl: 86400 * 2, // 2 days
-      });
+      // Responses API commonly provides `output_text`
+      const out =
+        (data && typeof data.output_text === "string" && data.output_text) ||
+        extractFromOutput(data) ||
+        "";
 
-      // Log usage metrics
-      const metricsKey = `metrics:${today}`;
-      const metrics = await env.USAGE_KV.get(metricsKey);
-      const metricsObj = metrics ? JSON.parse(metrics) : { requests: 0, ips: {} };
-      metricsObj.requests++;
-      metricsObj.ips[ip] = (metricsObj.ips[ip] || 0) + 1;
-      await env.USAGE_KV.put(metricsKey, JSON.stringify(metricsObj), {
-        expirationTtl: 86400 * 30, // 30 days
-      });
-
-      return new Response(
-        JSON.stringify({ text: output.trim() }),
-        {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    } catch (err) {
-      return new Response(
-        JSON.stringify({ error: err.message }),
-        { status: 500, headers: corsHeaders }
-      );
+      return json({ text: out.trim() }, 200, cors);
+    } catch (e) {
+      return json({ error: e?.message || "Unknown error" }, 500, cors);
     }
   },
 };
+
+function json(obj, status, headers) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { ...headers, "Content-Type": "application/json" },
+  });
+}
+
+async function incrementKV(kv, key, by) {
+  try {
+    const raw = await kv.get(key);
+    const n = raw ? parseInt(raw, 10) : 0;
+    await kv.put(key, String(n + by));
+  } catch {
+    // ignore
+  }
+}
+
+function extractFromOutput(data) {
+  try {
+    const out = data?.output?.[0]?.content;
+    if (!Array.isArray(out)) return "";
+    return out.map((c) => c?.text || "").join("");
+  } catch {
+    return "";
+  }
+}
