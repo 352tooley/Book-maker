@@ -1,71 +1,193 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Book Maker</title>
+<meta charset="UTF-8" />
+<title>Book Maker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css">
+<style>
+body { margin:0; font-family: system-ui, Arial; background:#f5f6f8; }
+header { background:#111; color:#fff; padding:10px 16px; display:flex; align-items:center; gap:12px; }
+header strong { font-size:18px; }
+header button { padding:6px 10px; }
+
+#layout { display:flex; height:calc(100vh - 48px); }
+
+#sidebar {
+  width:240px;
+  background:#1e1f22;
+  color:#fff;
+  padding:10px;
+  overflow:auto;
+}
+#sidebar h3 { margin:6px 0; font-size:14px; }
+
+.chapter {
+  background:#2a2c31;
+  margin-bottom:6px;
+  padding:6px;
+  border-radius:6px;
+  cursor:pointer;
+}
+.chapter.active { background:#4b68ff; }
+.chapter button { float:right; }
+
+#main {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+#toolbar {
+  background:#fff;
+  border-bottom:1px solid #ccc;
+  padding:8px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:center;
+}
+
+#editor {
+  flex:1;
+  padding:24px;
+  background:#fff;
+  outline:none;
+  overflow:auto;
+}
+
+#editor:focus { outline:none; }
+
+#chapterTitle {
+  width:100%;
+  padding:10px;
+  font-size:20px;
+  border:none;
+  border-bottom:1px solid #ccc;
+}
+
+select, input[type=text] { padding:6px; }
+button { cursor:pointer; }
+
+#saveStatus { margin-left:auto; font-size:12px; color:#555; }
+
+.modal {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.5);
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+.modal.active { display:flex; }
+.modal-box {
+  background:#fff;
+  padding:20px;
+  width:360px;
+  border-radius:8px;
+}
+</style>
 </head>
 <body>
 
-<div class="top-bar">
-  <strong>📖 Book Maker</strong>
-  <button onclick="insertSceneBreak()">*** Scene Break</button>
-  <button onclick="openSearch()">🔍 Search</button>
-  <button onclick="aiRewrite()">✨ AI Rewrite</button>
-  <button onclick="aiExpand()">📝 AI Expand</button>
-  <button onclick="aiContinue()">➡️ AI Continue</button>
-  <button onclick="undo()">↶ Undo</button>
-  <button onclick="openSettings()">⚙ Settings</button>
-  <button onclick="exportJSON()">💾 JSON</button>
-  <button onclick="exportEPUB()">📕 EPUB</button>
-  <button onclick="exportPDF()">📄 PDF</button>
-  <span id="saveStatus">Saved ✓</span>
-  <span><strong id="totalWords">0</strong> words</span>
-</div>
+<header>
+  <strong>📘 Book Maker</strong>
 
-<div style="display:flex;height:calc(100vh - 50px);">
-  <div style="width:260px;padding:10px;overflow:auto;background:#fff;border-right:1px solid #ddd;">
-    <button onclick="addChapter()" style="width:100%;padding:10px;background:#06b6d4;color:white;border:none;border-radius:4px;margin-bottom:10px;">＋ Add Chapter</button>
+  <button onclick="addChapter()">➕ Chapter</button>
+  <button onclick="undo()">↩ Undo</button>
+
+  <button onclick="aiRewrite()">✍ Rewrite</button>
+  <button onclick="aiExpand()">➕ Expand</button>
+  <button onclick="aiSummarize()">🧠 Summarize</button>
+  <button onclick="aiContinue()">➡ Continue</button>
+
+  <button onclick="openSettings()">⚙ Settings</button>
+
+  <span id="saveStatus">Saved ✓</span>
+</header>
+
+<div id="layout">
+  <div id="sidebar">
+    <h3>Chapters</h3>
     <div id="chapterList"></div>
   </div>
 
-  <div style="flex:1;padding:30px;overflow:auto;">
-    <input id="chapterTitle" placeholder="Chapter Title" style="font-size:32px;width:100%;border:none;margin-bottom:20px;font-weight:bold;">
-    <div id="editor" class="editor" contenteditable="true"></div>
+  <div id="main">
+    <input id="chapterTitle" placeholder="Chapter title..." />
+
+    <div id="toolbar">
+      Mode:
+      <select id="aiMode">
+        <option value="rewrite">Rewrite</option>
+        <option value="expand">Expand</option>
+        <option value="summarize">Summarize</option>
+        <option value="continue">Continue</option>
+      </select>
+
+      Template:
+      <select id="aiTemplate">
+        <option value="default">Default</option>
+        <option value="dramatic">Dramatic</option>
+        <option value="concise">Concise</option>
+        <option value="descriptive">Descriptive</option>
+      </select>
+
+      Model:
+      <select id="aiModel">
+        <option value="gpt-4o-mini">gpt-4o-mini</option>
+        <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+        <option value="gpt-4.1">gpt-4.1</option>
+      </select>
+
+      <label>
+        <input type="checkbox" id="aiStream" checked />
+        Streaming
+      </label>
+
+      <span style="margin-left:auto">Total words: <span id="totalWords">0</span></span>
+    </div>
+
+    <div id="editor" contenteditable="true"></div>
   </div>
 </div>
 
-<!-- Search Modal -->
-<div class="modal" id="searchModal">
-  <div class="modal-content">
-    <h3>Search & Replace</h3>
-    <input id="searchFind" placeholder="Find">
-    <input id="searchReplace" placeholder="Replace">
-    <button onclick="runReplace(false)">Replace in Chapter</button>
-    <button onclick="runReplace(true)">Replace All</button>
-    <button onclick="closeSearch()">Cancel</button>
-  </div>
-</div>
-
-<!-- Settings Modal -->
+<!-- SETTINGS MODAL -->
 <div class="modal" id="settingsModal">
-  <div class="modal-content">
+  <div class="modal-box">
     <h3>AI Settings</h3>
-    <label>Cloudflare Worker Endpoint:</label>
-    <input id="aiEndpoint" placeholder="https://your-worker.workers.dev">
-    <label>API Token:</label>
-    <input id="aiToken" type="password" placeholder="Your secret token">
-    <p style="font-size:12px;color:#666;">Configure your Cloudflare Worker URL and authentication token for AI features.</p>
-    <button onclick="saveSettings()">Save Settings</button>
-    <button onclick="closeSettings()">Cancel</button>
+
+    <div>
+      <label>Worker Endpoint</label><br>
+      <input id="aiEndpoint" style="width:100%" placeholder="https://bookmaker-ai....workers.dev">
+    </div>
+
+    <div style="margin-top:10px">
+      <label>Access Token</label><br>
+      <input id="aiToken" style="width:100%" placeholder="your BOOKMAKER_TOKEN">
+    </div>
+
+    <div style="margin-top:16px; text-align:right">
+      <button onclick="closeSettings()">Cancel</button>
+      <button onclick="saveSettings()">Save</button>
+    </div>
   </div>
 </div>
 
 <script src="app.js"></script>
+
+<script>
+function openSettings() {
+  document.getElementById("settingsModal").classList.add("active");
+}
+function closeSettings() {
+  document.getElementById("settingsModal").classList.remove("active");
+}
+</script>
+
 </body>
 </html>
