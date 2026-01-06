@@ -1,0 +1,148 @@
+body {
+  font-family: Inter, system-ui, sans-serif;
+  background: #f8f9fa;
+  margin: 0;
+}
+
+.top-bar {
+  background: #1a1d23;
+  color: white;
+  padding: 10px 20px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.top-bar button {
+  background: #374151;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.top-bar button:hover {
+  background: #4b5563;
+}
+
+button {
+  cursor: pointer;
+}
+
+.chapter {
+  background: #eee;
+  padding: 10px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  position: relative;
+  cursor: pointer;
+}
+
+.chapter:hover {
+  background: #e0e0e0;
+}
+
+.chapter.active {
+  background: #06b6d4;
+  color: white;
+}
+
+.chapter .danger {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+  padding: 2px 6px;
+}
+
+.chapter .danger:hover {
+  color: #ef4444;
+}
+
+.editor {
+  font-family: Merriweather, serif;
+  font-size: 16px;
+  line-height: 1.8;
+  min-height: 500px;
+  outline: none;
+}
+
+.editor:empty::before {
+  content: "Start writing…";
+  color: #999;
+}
+
+.scene-break {
+  border: none;
+  border-top: 2px dashed #999;
+  margin: 2em 0;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 1000;
+}
+
+.modal.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  width: 400px;
+  max-width: 90%;
+  border-radius: 8px;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+}
+
+.modal-content input,
+.modal-content textarea {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.modal-content button {
+  margin-right: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background: #06b6d4;
+  color: white;
+  cursor: pointer;
+}
+
+.modal-content button:hover {
+  background: #0891b2;
+}
+
+.modal-content button:last-child {
+  background: #6b7280;
+}
+
+.modal-content button:last-child:hover {
+  background: #4b5563;
+}
+
+#saveStatus {
+  color: #10b981;
+  font-size: 14px;
+}
